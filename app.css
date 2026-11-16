@@ -875,3 +875,49 @@ body[data-theme="bright"]{--tabon:#7d6650;--tabsh:#5e4b3a;--taboffbg:#ECE6DC;--t
 .in-splash img{width:min(34vw,150px);height:auto}
 .in-splash{transition:opacity .8s ease,transform .8s ease}
 .introbox .in-wrap{transition:opacity .8s ease .2s,transform .8s ease .2s}
+
+/* ===== 9차-6 ===== */
+/* 홈 카드: 펼쳐 읽기만 이동 */
+.hcard .hcbody{cursor:default;text-align:center}
+.hcard .cfoot{margin-top:10px}
+.hcard .refr{margin-bottom:8px}
+.hcard .more{font-size:calc(16.5px * var(--ui));font-weight:700;color:var(--copper);display:inline-flex;align-items:center;gap:4px;padding:6px 0 2px;min-height:40px}
+.hcard .more .ar{font-size:1.35em;line-height:1;transform:translateY(-1px)}
+/* 진도표: 배경색 따라, 오늘은 진한 테두리 + 흰 빈칸 */
+.grid button{background:var(--taboffbg)}
+.grid button.f{background:var(--tabon)}
+.grid button.t{background:#fff;outline:2.5px solid var(--tabon);outline-offset:0}
+.lg-t,.lg-f{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:-1px;margin-right:2px}
+.lg-t{background:#fff;outline:2px solid var(--tabon)}.lg-f{background:var(--tabon)}
+/* 꺼진·켜진 칸 통일 */
+.seg{background:var(--taboffbg)}
+.seg button{color:var(--tabofffg)}
+.seg button.on{background:var(--tabon);color:#fff}
+/* 싱그럽게: 싱그러운 청록 */
+body[data-theme="clear"]{--tabon:#3a9884;--tabsh:#2b7363;--taboffbg:#e3f1ec;--tabofffg:#2f5f55;--tabofflin:#c6e0d6}
+/* 가가 판 */
+.uipop .uih{font-size:15.5px;font-weight:800;color:var(--ink);margin-bottom:8px}
+.ustep{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.ustep button{width:46px;height:42px;border:1px solid var(--line);border-radius:10px;font-size:22px;font-weight:700;color:var(--ink);background:#fff}
+.ustep button:disabled{opacity:.35}
+.ustep b{min-width:72px;text-align:center;font-size:15px}
+/* 가운데 메뉴: 높이 고정, 간격은 한 줄씩 */
+.rpsub{min-height:104px;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.rrow{display:flex;align-items:center;gap:10px}
+.rrow .rlab{flex:0 0 52px;margin:0;font-size:13px;opacity:.85}
+.rrow .rseg{flex:1}
+/* 제목 */
+.bar .ttl.gt.big{font-size:1.1em}
+/* 책 속 머리: 선은 위로, 날짜·주제 사이는 넓게 */
+.rh1{padding-bottom:3px;border-bottom-color:#ebe4d7}
+.rdate{margin-top:13px}
+.rhead:not(.tm) .rtp{margin-top:11px}
+.rhead{border-bottom:2px solid #dbd3c6}
+/* 시작 화면 */
+:root{--in-ray:#ffffff}
+body[data-theme="clear"]{--in-ray:#ffffff}
+#inbook path{stroke-width:1.65}
+.introbox .ray{stroke-width:1.98}
+.in-splash{background:#192c46}
+.introbox.bye{opacity:0;transition:opacity .45s ease}
+.rhead:not(.tm) .rtp{margin-top:12px!important}.rhead .rdate{margin-bottom:0!important}

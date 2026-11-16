@@ -1,6 +1,6 @@
 'use strict';
 /* 365 복음 묵상 — 2차 앱 (개인용·배포용 공통 코드, 데이터만 다름) */
-const VERSION = '0.9.4';
+const VERSION = '0.9.5';
 const APPNAME = '365 복음 묵상';
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
@@ -195,7 +195,7 @@ const LOGO = `<svg class="logo" viewBox="0 0 200 172" aria-hidden="true"><g fill
 function bar(title, left = 'back', opts = {}) {
   const l = left === 'back' ? `<button data-act="back" aria-label="뒤로">${icon('back')}</button>` : `<span class="sp"></span>`;
   const r = opts.findOnly ? `<span class="tools"><button data-go="#/find" aria-label="찾기">${icon('search')}</button></span>` : !opts.tools ? '<span class="sp"></span>' : `<span class="tools"><button data-act="ui" class="uib" aria-label="화면 글자 크기"><span class="a">가</span><span class="b">가</span></button>${opts.find === false ? '' : `<button data-go="#/find" aria-label="찾기">${icon('search')}</button>`}</span>`;
-  const t = opts.logo ? `<b class="ttl">${LOGO}<span>${esc(title)}</span></b>` : `<b class="ttl gt">${opts.ic ? icon(opts.ic) : ''}<span>${esc(title)}</span></b>`;
+  const t = opts.logo ? `<b class="ttl">${LOGO}<span>${esc(title)}</span></b>` : `<b class="ttl gt ${opts.big ? 'big' : ''}">${opts.ic ? icon(opts.ic) : ''}<span>${esc(title)}</span></b>`;
   return `<div class="bar">${l}${t}${r}</div>`;
 }
 // 아래 메뉴: 화면마다 알맞게 (아이콘만)
@@ -251,9 +251,10 @@ function uiPicker(btn) {
   const p = $('#uipop');
   if (!p.hidden) { closeOverlay(); return; }
   p.classList.toggle('fromnav', btn.classList.contains('navui'));
-  p.innerHTML = `<div class="lab">화면 글자 (날짜·메뉴·안내)</div><div class="row">${UI_STEPS.map((x, i) => `<button class="${i === ST.set.ui ? 'on' : ''}" data-ui="${i}" style="font-size:${12 + i * 2.5}px" aria-label="${x[1]}">가</button>`).join('')}</div><div class="lab">본문 글자는 책 속에서 화면 가운데를 눌러 바꾸세요</div>`;
+  const draw = () => { p.innerHTML = `<div class="uih">화면 글자 크기</div><div class="ustep"><button data-us="-1" aria-label="작게" ${ST.set.ui <= 0 ? 'disabled' : ''}>−</button><b>${UI_STEPS[ST.set.ui][1]}</b><button data-us="1" aria-label="크게" ${ST.set.ui >= UI_STEPS.length - 1 ? 'disabled' : ''}>+</button></div><div class="lab">본문 글자는 책 속에서 화면 가운데를 눌러 바꾸세요</div>`;
+    $$('[data-us]', p).forEach(x => x.onclick = () => { ST.set.ui = Math.max(0, Math.min(UI_STEPS.length - 1, ST.set.ui + +x.dataset.us)); save(); applyView(); draw(); }); };
+  draw();
   openOverlay(p);
-  $$('[data-ui]', p).forEach(x => x.onclick = () => { ST.set.ui = +x.dataset.ui; save(); applyView(); $$('[data-ui]', p).forEach(y => y.classList.toggle('on', y === x)); });
 }
 
 /* ---------- 뒤로 가기: 한 단계씩, 판은 먼저 닫고, 홈에서는 두 번 눌러야 닫힘 ---------- */
@@ -291,8 +292,8 @@ function showIntro() {
   b.innerHTML = `<div class="in-wrap"><div class="in-logo" id="inlogo"><svg id="inbook"></svg><div class="in-365" id="in365">365</div><div class="in-name" id="inname">${'복음 묵상'.split('').map(c => `<span>${c === ' ' ? '&nbsp;' : c}</span>`).join('')}</div></div>
     <div class="in-verse" id="inv">${INTRO.map(l => `<span class="ln">${esc(l)}</span>`).join('<br>')}</div><div class="in-ref">로마서 16:25~27</div>
     <div class="in-act"><button class="in-go" id="ingo">들어가기</button><label class="in-chk"><input type="checkbox" id="inchk" ${ST.set.intro ? 'checked' : ''}> 시작 화면 항상 보기</label></div></div>`;
-  b.insertAdjacentHTML('afterbegin', '<div class="in-splash"><img src="icons/icon-192.png" alt=""></div>');
-  b.classList.remove('go'); b.hidden = false; setTimeout(() => b.classList.add('go'), 650); // 휴대폰 첫 화면(아이콘)과 똑같이 시작 → 아이콘이 스러지며 글이 떠오름
+  b.insertAdjacentHTML('afterbegin', '<div class="in-splash"><img src="icons/icon-512.png" alt=""></div>');
+  b.classList.remove('go'); b.hidden = false; setTimeout(() => b.classList.add('go'), 1000); // 휴대폰 첫 화면(아이콘)과 똑같이 시작 → 아이콘이 스러지며 글이 떠오름
   const fit = () => {
     const v = $('#inv'); if (!v) return; const w = Math.min(b.clientWidth - 28, 560); let f = 18; v.style.fontSize = f + 'px'; while (f > 9 && v.scrollWidth > w) { f -= .5; v.style.fontSize = f + 'px'; }
     // 책 폭 = “예수 그리스도로 말미암아” 줄 폭, 365 폭 = “복”과 “상”의 가운데 사이
@@ -309,7 +310,7 @@ function showIntro() {
   $('#ingo').onclick = hideIntro;
   $('#inchk').onchange = e => { ST.set.intro = e.target.checked; save(); };
 }
-function hideIntro() { const b = $('#introbox'); b.hidden = true; b.innerHTML = ''; setTimeout(backupNag, 800); try { sessionStorage.setItem('m365-intro', Date.now()); } catch (e) {} }
+function hideIntro() { const b = $('#introbox'); if (b.classList.contains('bye')) return; b.classList.add('bye'); setTimeout(() => { b.hidden = true; b.classList.remove('bye'); b.innerHTML = ''; }, 450); setTimeout(backupNag, 800); try { sessionStorage.setItem('m365-intro', Date.now()); } catch (e) {} }
 
 /* ---------- 라우터 ---------- */
 let pager = null;
@@ -361,8 +362,8 @@ function fullRef(vv, day) { // 줄임 없이: “마태복음 2:16~18” (본문
 function cardHTML(day, vv, href, legend) {
   const tp = D.topics[day.t], sb = D.subs[day.s];
   return `<div class="hcard ${legend ? 'lg' : ''}">${legend ? `<span class="legend">${legend}</span>` : ''}
-    <button class="hcbody" data-go="${href}"><div class="ctp">${esc(tp.title)}</div><div class="cln"></div><div class="csb">${esc(sb.title)}</div>
-    <p class="snip big">${snipHTML(vv)}</p><div class="cfoot"><div class="refr">${esc(fullRef(vv, day))}</div><span class="more">펼쳐 읽기 ›</span></div></button></div>`;
+    <div class="hcbody"><div class="ctp">${esc(tp.title)}</div><div class="cln"></div><div class="csb">${esc(sb.title)}</div>
+    <p class="snip big">${snipHTML(vv)}</p><div class="cfoot"><div class="refr">${esc(fullRef(vv, day))}</div><button class="more" data-go="${href}">펼쳐 읽기 <span class="ar">›</span></button></div></div></div>`;
 }
 async function vHome() {
   const t = todayInfo(), id = todayDayId(), day = D.days[id];
@@ -779,7 +780,7 @@ function readPanel(day, topic, memo) {
     if (k === 'mode') return seg('mode', [['scroll', '스크롤'], ['page', '쪽 넘기기']]);
     if (k === 'fs') return `<div class="rstep"><button data-fs="-1"><span style="font-size:13px">가</span>−</button><b>${s.fs}</b><button data-fs="1"><span style="font-size:19px">가</span>+</button></div>`;
     if (k === 'font') return seg('font', FONTS.slice(0, 4));
-    if (k === 'gap') return `<div class="rlab">줄 간격</div><div class="rseg">${LH_STEPS.map(([t, v]) => `<button data-lh="${v}" class="${Math.abs(s.lh - v) < .06 ? 'on' : ''}">${t}</button>`).join('')}</div><div class="rlab">여백</div>${seg('pad', PADS.map((x, i) => [i, x[1]]))}`;
+    if (k === 'gap') return `<div class="rrow"><span class="rlab">줄 간격</span><div class="rseg">${LH_STEPS.map(([t, v]) => `<button data-lh="${v}" class="${Math.abs(s.lh - v) < .06 ? 'on' : ''}">${t}</button>`).join('')}</div></div><div class="rrow"><span class="rlab">여백</span>${seg('pad', PADS.map((x, i) => [i, x[1]]))}</div>`;
     if (k === 'theme') return `<div class="rseg th">${THEMES.map(([v, t]) => `<button data-k="theme" data-v="${v}" class="${s.theme === v ? 'on' : ''}"><i class="sw ${v}"></i>${t}</button>`).join('')}</div>`;
     return '';
   };
@@ -1158,9 +1159,8 @@ async function vVol(n) {
       <div class="seg" id="vs">${[1, 2, 3].map(k => `<button data-v="${k}" class="${k === n ? 'on' : ''}">${vlabel(k)}</button>`).join('')}</div>
       <div class="row between"><b style="color:var(--vc)">${roundLabel(n).split(' · ')[0]}</b><span class="lab">${c} / 365일</span></div>
       <div class="grid">${vol.days.map(d => `<button class="${P.read[d.id] ? 'f' : ''} ${d.id === tid ? 't' : ''}" data-go="#/read/${d.id}" aria-label="${dlabel(d)}"></button>`).join('')}</div>
-      <div class="row lab" style="gap:14px"><span><i style="display:inline-block;width:10px;height:10px;background:var(--vc);border-radius:2px"></i> 읽음</span><span><i style="display:inline-block;width:10px;height:10px;outline:2px solid var(--copper);border-radius:2px"></i> 오늘</span></div>
+      <div class="row lab" style="gap:14px"><span><i class="lg-t"></i> 오늘</span><span><i class="lg-f"></i> 읽음</span></div>
       ${hist}
-      <button class="btn" data-go="#/toc/date?v=${n}">${icon('toc')}일자별 목차 보기</button>
     </div>${nav('')}</div>`;
   $('#vs').onclick = e => { const b = e.target.closest('button'); if (b) go(`#/vol/${b.dataset.v}`, true); };
 }
@@ -1177,7 +1177,7 @@ async function vCol(tab) {
   const ctl = `<div class="row between"><span class="lab">${colSort === 'text' ? '본문 순서' : '최근 순'} · 아래 정렬에서 바꿈</span>
     <select id="cv" class="field" style="width:auto;padding:6px 8px">${['전체', '제1권', '제2권', '제3권'].map((t, k) => `<option value="${k}" ${k === colVol ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
     <input class="field" id="cq" placeholder="찾을 낱말" inputmode="search" hidden>`;
-  $('#app').innerHTML = `<div class="screen">${bar('모아 보기', 'back', { findOnly: true })}<div class="body">${seg}${ctl}<div class="card list" id="cl"></div></div>${nav('col', { ctx: 'col' })}</div>`;
+  $('#app').innerHTML = `<div class="screen">${bar('모아 보기', 'back', { findOnly: true, ic: 'col', big: true })}<div class="body">${seg}${ctl}<div class="card list" id="cl"></div></div>${nav('col', { ctx: 'col' })}</div>`;
   const draw = () => {
     const q = $('#cq').value.trim();
     let rows = [];
@@ -1301,7 +1301,7 @@ function vMemoList() {
   const allOpen = groups.every(([c]) => mOpen[c]);
   const list = `<div class="card mtoc">${groups.map(([c, arr]) => `<button class="crow ${mOpen[c] ? 'open' : ''}" data-cat="${esc(c)}"><span>${esc(c)}</span><span class="cnt">${arr.length}${fx(mOpen[c])}</span></button>${mOpen[c] ? `<div class="cbody">${arr.length ? arr.map(m => memoRow(m, c)).join('') : '<div class="empty small">아직 이 분류에 넣은 메모가 없습니다.</div>'}</div>` : ''}`).join('')}
       <button class="crow add" id="addcat"><span>＋ 분류 추가</span></button></div>`;
-  $('#app').innerHTML = `<div class="screen">${bar('메모', 'back', { findOnly: true, ic: 'memos' })}<div class="body">
+  $('#app').innerHTML = `<div class="screen">${bar('메모', 'back', { findOnly: true, ic: 'memos', big: true })}<div class="body">
     <div class="mhead"><b>Memo · 묵상&amp;연구</b><span class="row"><button class="btn sm" data-go="#/edit/new">${icon('pen')}새 메모</button><button class="xall" id="mx" aria-label="${allOpen ? '모두 접기' : '모두 펼치기'}">${icon(allOpen ? 'collapse' : 'expand')}</button></span></div>
     ${list}</div>${nav('memo', { ctx: 'memo', sort: true })}</div>`;
   $('#mx').onclick = () => { mOpen = {}; if (!allOpen) groups.forEach(([c]) => mOpen[c] = true); vMemoList(); };
@@ -1323,7 +1323,7 @@ async function vMemo(id) {
   const st = styleShort(m), cs = catsOf(m);
   const badges = (cs.length ? cs.map(c => `<button class="tag cat" data-pick>${esc(c)}</button>`).join('') : '<button class="tag cat un" data-pick>미분류</button>') + (st ? `<span class="tag style">${st}</span>` : '');
   const hasOrig = !!m.orig, onlyOrig = hasOrig && !m.html;
-  $('#app').innerHTML = `<div class="screen">${bar('메모', 'back', { findOnly: true, ic: 'memos' })}
+  $('#app').innerHTML = `<div class="screen">${bar('메모', 'back', { findOnly: true, ic: 'memos', big: true })}
     <div class="body memo">
       <div class="row between"><span class="lab">${memoDates(m)}</span><span class="row" style="gap:5px">${badges}</span></div>
       <h1>${esc(m.title || '(제목 없음)')}</h1>
@@ -1842,11 +1842,8 @@ function vSet() {
     <h3>보기</h3><div class="card">
       <div class="lab">시작 화면</div><label class="chk"><input type="checkbox" id="intro" ${s.intro ? 'checked' : ''}> 앱을 열 때마다 시작 화면(로마서 16:25~27) 보기</label>
       <div class="lab">색 테마</div>${segs('theme', THEMES)}
-      <div class="lab">화면 글자 (오른쪽 위 가가 단추와 같음 · 날짜·메뉴·안내 글씨)</div>${segs('ui', UI_STEPS.map((x, i) => [i, x[1]]))}
       <div class="lab">본문 글꼴</div><div class="seg wrap" data-k="font">${FONTS.map(([v, t]) => `<button data-v="${v}" class="${s.font === v ? 'on' : ''}" data-f="${v}">${t}</button>`).join('')}</div>
-      <div class="lab">본문 글자 크기 (책 속에서 화면 가운데를 눌러도 바꿀 수 있습니다)</div><input type="range" min="15" max="28" step="1" value="${s.fs}" id="fs">
-      <div class="lab">줄 간격</div><input type="range" min="1.5" max="2.4" step="0.1" value="${s.lh}" id="lh">
-      <div class="lab">좌우 여백</div>${segs('pad', PADS.map((x, i) => [i, x[1]]))}
+      <div class="lab">글자 크기·줄 간격·여백은 책 속에서 화면 가운데를 눌러 바꾸세요. 날짜·메뉴 글씨는 아래 메뉴의 가가로 바꾸세요</div>
       <div class="preview">내가 너로 여자와 원수가 되게 하고 네 후손도 여자의 후손과 원수가 되게 하리니 여자의 후손은 네 머리를 상하게 할 것이요</div>
       <div class="lab">넘기기</div>${segs('mode', [['page', '쪽 넘기기'], ['scroll', '스크롤']])}</div>
     <h3>올해 읽을 권</h3><div class="card">${segs('vol', [[1, '제1권'], [2, '제2권'], [3, '제3권']])}
@@ -1876,8 +1873,7 @@ function vSet() {
     save(); applyView(); if (k === 'vol') await loadVol(s.vol); if (k === 'ai') { vSet(); if (s.ai !== 'none') { toast(`연결할 AI를 ${AI[s.ai].name}(으)로 바꾸었습니다. 아래 지침을 새 AI에 저장해 주세요.`, 4200); setTimeout(() => { const a = $('#aisec'); if (a) a.scrollIntoView({ block: 'start' }); }, 50); } }
   }));
   $('#ny').onchange = e => { s.newYear = e.target.checked; save(); };
-  $('#fs').oninput = e => { s.fs = +e.target.value; applyView(); save(); };
-  $('#lh').oninput = e => { s.lh = +e.target.value; applyView(); save(); };
+
   const rg = () => { const g = $('#gcs'); if (!g) return; g.innerHTML = guideCards(); bindGuideCards(rg); }; if ($('#gcs')) bindGuideCards(rg);
   $('#intro').onchange = e => { s.intro = e.target.checked; save(); };
   $('#nt').onchange = e => { s.notifyTime = e.target.value || '06:00'; save(); };

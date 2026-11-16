@@ -762,7 +762,7 @@ html,body{overscroll-behavior-y:none}
 /* 시작 화면: 서서히 나타남 · 365/복음 묵상 위아래 여백 맞춤 */
 .introbox:not([hidden]){animation:infade .45s ease-out}
 @keyframes infade{from{opacity:0}to{opacity:1}}
-.in-logo{padding:48px 0 24px}
+.in-logo{padding:41px 0 31px}
 /* 홈: 제목·아이콘 크게, 켜진 버튼 회청색, 날짜 갈색, 목차 덩어리 */
 .homes .bar .ttl{font-size:17.6px}
 .homes .bar .ttl svg.logo{width:2.1em;height:1.8em}
@@ -842,3 +842,21 @@ html,body{overscroll-behavior-y:none}
 .rptabs{display:flex}
 .rptabs>button{flex:1 1 0;min-width:0}
 .rptabs>button.rpx{flex:0 0 46px}
+
+/* ===== 9차-4: 배경색 따라가기 · 시작 화면 · 읽기 완료 ===== */
+:root{--in-ray:#2fc4ae;--in-365:var(--barfg);--in-refc:#d9b97f;--tabon:#4A5670;--tabsh:#333d50;--nextb:#34496b}
+body[data-theme="clear"]{--in-ray:#f3d98f;--in-refc:#f3d98f;--tabon:#3f7f7a;--tabsh:#2b5c58;--nextb:#3d7d78}
+body[data-theme="bright"]{--in-ray:#2fc4ae;--in-365:#6f5236;--in-refc:#8a5f3c;--tabon:#8a6a4c;--tabsh:#6b5038;--nextb:#9a7452}
+.introbox .ray{stroke:var(--in-ray)}
+.in-365{color:var(--in-365)}
+.introbox .in-ref{color:var(--in-refc)}
+body[data-theme="bright"] #inbook{color:#192c46}
+.in-splash{background:#f7f4ed}
+.htabs button.on{background:var(--tabon);border-color:var(--tabon);box-shadow:0 3px 0 var(--tabsh),0 5px 10px rgba(40,50,70,.2)}
+.nextbtn{background:var(--nextb)}
+.aifade div{background:var(--acc)}
+.mhead .btn.sm{background:#ECEAE6;color:#4A4F57;border-color:#dcd9d3}
+.mhead .btn.sm svg.i{color:#4A4F57}
+.readbtn{font-size:14.5px;padding:6px 16px;gap:7px}
+.readbtn svg.i{width:22px;height:22px;color:#5a9a6a}
+.readbtn.on svg.i{color:#3f8a55}

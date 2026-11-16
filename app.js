@@ -1,6 +1,6 @@
 'use strict';
 /* 365 복음 묵상 — 2차 앱 (개인용·배포용 공통 코드, 데이터만 다름) */
-const VERSION = '0.9.2';
+const VERSION = '0.9.3';
 const APPNAME = '365 복음 묵상';
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
@@ -32,7 +32,7 @@ const BOOKS = Object.keys(EN);
 const RNG = s => String(s).replace(/[–-](?=\d)/g, '~');
 const INTRO = ['나의 복음과 예수 그리스도를 전파함은', '영세 전부터 감추어졌다가 이제는 나타내신 바 되었으며', '영원하신 하나님의 명을 따라 선지자들의 글로 말미암아', '모든 민족이 믿어 순종하게 하시려고 알게 하신 바', '그 신비의 계시를 따라 된 것이니', '이 복음으로', '너희를 능히 견고하게 하실 지혜로우신 하나님께', '예수 그리스도로 말미암아', '영광이 세세무궁하도록 있을지어다', '아멘'];
 const FONTS = [['serif', '명조'], ['serif-light', '가는 명조'], ['sans-kr', '고딕'], ['sans-light', '가는 고딕'], ['sys', '기본 글꼴']];
-const THEMES = [['calm', '차분하게'], ['clear', '맑게'], ['bright', '밝게']];
+const THEMES = [['calm', '진중하게'], ['clear', '싱그럽게'], ['bright', '차분하게']];
 const THEME_COLOR = { calm: '#192c46', clear: '#2c6f6b', bright: '#f3ece1' };
 const UI_STEPS = [['xs', '아주 작게', .86], ['small', '작게', .93], ['normal', '보통', 1], ['large', '크게', 1.14], ['xlarge', '아주 크게', 1.3]];
 const FS_STEPS = [16, 18, 20, 22, 25];
@@ -251,7 +251,7 @@ function uiPicker(btn) {
   const p = $('#uipop');
   if (!p.hidden) { closeOverlay(); return; }
   p.classList.toggle('fromnav', btn.classList.contains('navui'));
-  p.innerHTML = `<div class="lab">화면 글자 (날짜·메뉴·안내)</div><div class="row">${UI_STEPS.map((x, i) => `<button class="${i === ST.set.ui ? 'on' : ''}" data-ui="${i}" style="font-size:${12 + i * 2.5}px" aria-label="${x[1]}">가</button>`).join('')}</div><div class="lab">본문 글자는 책 속에서 화면 가운데를 눌러 바꿉니다.</div>`;
+  p.innerHTML = `<div class="lab">화면 글자 (날짜·메뉴·안내)</div><div class="row">${UI_STEPS.map((x, i) => `<button class="${i === ST.set.ui ? 'on' : ''}" data-ui="${i}" style="font-size:${12 + i * 2.5}px" aria-label="${x[1]}">가</button>`).join('')}</div><div class="lab">본문 글자는 책 속에서 화면 가운데를 눌러 바꾸세요</div>`;
   openOverlay(p);
   $$('[data-ui]', p).forEach(x => x.onclick = () => { ST.set.ui = +x.dataset.ui; save(); applyView(); $$('[data-ui]', p).forEach(y => y.classList.toggle('on', y === x)); });
 }
@@ -279,7 +279,7 @@ function backGuard() {
     if (!e.state || !e.state.base) return;
     if (location.hash && !/^#\/?$/.test(location.hash) && !/^#\/\?/.test(location.hash)) { history.pushState({ top: 1 }, '', '#/'); route(); return; }
     if (Date.now() - lastBack < 2000) { history.back(); return; }
-    lastBack = Date.now(); toast('뒤로 가기를 한 번 더 누르면 앱이 닫힙니다.', 1900);
+    lastBack = Date.now(); toast('뒤로 가기를 한 번 더 누르면 앱이 닫힙니다', 1900);
     history.pushState({ top: 1 }, '', location.href);
   });
 }
@@ -303,7 +303,7 @@ function showIntro() {
     const H = lg.clientHeight - 30, m = W / 2, sv = $('#inbook');
     sv.setAttribute('viewBox', `0 0 ${W} ${H + 46}`); sv.setAttribute('width', W); sv.setAttribute('height', H + 46);
     const y0 = 28, y1 = 28 + H - 14;
-    sv.innerHTML = `<g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M${m} ${y0 + 12} Q${m - 9} ${y0} ${m - 34} ${y0} H10 Q2 ${y0} 2 ${y0 + 8} V${y1 - 8} Q2 ${y1} 10 ${y1} H${m - 30} Q${m - 10} ${y1} ${m} ${y1 + 12} Q${m + 10} ${y1} ${m + 30} ${y1} H${W - 10} Q${W - 2} ${y1} ${W - 2} ${y1 - 8} V${y0 + 8} Q${W - 2} ${y0} ${W - 10} ${y0} H${m + 34} Q${m + 9} ${y0} ${m} ${y0 + 12}"/><path d="M${m} ${y0 - 8} V${y0 - 22}M${m - 14} ${y0 - 6} L${m - 22} ${y0 - 18}M${m + 14} ${y0 - 6} L${m + 22} ${y0 - 18}"/></g>`;
+    sv.innerHTML = `<g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M${m} ${y0 + 12} Q${m - 9} ${y0} ${m - 34} ${y0} H10 Q2 ${y0} 2 ${y0 + 8} V${y1 - 8} Q2 ${y1} 10 ${y1} H${m - 30} Q${m - 10} ${y1} ${m} ${y1 + 12} Q${m + 10} ${y1} ${m + 30} ${y1} H${W - 10} Q${W - 2} ${y1} ${W - 2} ${y1 - 8} V${y0 + 8} Q${W - 2} ${y0} ${W - 10} ${y0} H${m + 34} Q${m + 9} ${y0} ${m} ${y0 + 12}"/></g><path class="ray" fill="none" stroke-width="1.8" stroke-linecap="round" d="M${m} ${y0 - 8} V${y0 - 22}M${m - 14} ${y0 - 6} L${m - 22} ${y0 - 18}M${m + 14} ${y0 - 6} L${m + 22} ${y0 - 18}"/>`;
   };
   document.fonts.ready.then(fit); fit();
   $('#ingo').onclick = hideIntro;
@@ -482,7 +482,7 @@ function bindGuideCards(redraw) {
     m.innerHTML = `<div class="card gview"><b>${GUIDE_ORDER.find(x => x[0] === k)[1]} 고치기</b><textarea class="field gedit" id="get">${esc(guideText(k))}</textarea><div class="row" style="justify-content:center"><button class="btn" id="gec">취소</button><button class="btn dark" id="ges">저장</button></div><div class="lab">고친 뒤에는 “AI에 저장”을 다시 눌러야 AI에 반영됩니다.</div></div>`;
     m.hidden = false;
     $('#gec').onclick = () => { m.hidden = true; };
-    $('#ges').onclick = () => { const v = $('#get').value.trim(); ST.guideEdit = ST.guideEdit || {}; if (v && v !== String(D.guides[k]).replace(/\*\*/g, '').trim()) ST.guideEdit[k] = v; else delete ST.guideEdit[k]; save(); m.hidden = true; toast('지침을 고쳤습니다.'); redraw && redraw(); };
+    $('#ges').onclick = () => { const v = $('#get').value.trim(); ST.guideEdit = ST.guideEdit || {}; if (v && v !== String(D.guides[k]).replace(/\*\*/g, '').trim()) ST.guideEdit[k] = v; else delete ST.guideEdit[k]; save(); m.hidden = true; toast('지침을 고쳤습니다'); redraw && redraw(); };
   });
   $$('[data-gr]').forEach(b => b.onclick = () => { if (!confirm('고친 지침을 지우고 원래 지침으로 되돌릴까요?')) return; delete ST.guideEdit[b.dataset.gr]; save(); redraw && redraw(); });
 }
@@ -494,7 +494,7 @@ function saveGuide(k) {
 function aiGo(name, url, tip) { // 앱 화면을 살짝 흐리며 안내 → AI 창으로
   let f = $('#aifade'); if (!f) { f = document.createElement('div'); f.id = 'aifade'; f.className = 'aifade'; document.body.appendChild(f); }
   const paste = tip !== '보내기만 누르면 됩니다.';
-  f.innerHTML = `<div><b>${paste ? '붙여넣으세요' : '보내기만 누르세요'}</b><small>${esc(name)}(으)로 넘어갑니다</small></div>`; f.classList.remove('out'); f.hidden = false;
+  f.innerHTML = `<div><b>${paste ? '붙여넣으세요' : '보내기만 누르세요'}</b><small>${esc(name)}로 넘어갑니다</small></div>`; f.classList.remove('out'); f.hidden = false;
   setTimeout(() => openExt(url), 800);
   setTimeout(() => { f.classList.add('out'); setTimeout(() => { f.hidden = true; }, 400); }, 3200);
 }
@@ -766,7 +766,7 @@ async function vRead(id, at, fromMemo, deepX, topic) {
   fl._t = T1;
   bindFlow(fl, day, () => { const a = pager && pager.anchor(); vRead(id, a ? `${a.dataset.pid}:${a.dataset.v}` : null, fromMemo, deepX, topic); });
   if ($('#mband')) bindBand();
-  if (!ST.tips.read6) { ST.tips.read6 = 1; save(); toast('화면 가운데를 톡 누르면 읽기 메뉴가, 구절을 길게 누른 채 끌면 구절 메뉴가 나타납니다.', 5200); }
+  if (!ST.tips.read6) { ST.tips.read6 = 1; save(); toast('화면 가운데를 톡 누르면 읽기 메뉴가, 구절을 길게 누른 채 끌면 구절 메뉴가 나타납니다', 5200); }
 }
 /* 책 속 가운데를 누르면 뜨는 메뉴 (MRAe 모양): 아이콘 5개 · 누른 것만 펼침 */
 let RP_TAB = '';
@@ -1002,7 +1002,7 @@ function verseSheet() {
   if (sh.hidden) showSheet();
   $$('[data-yv]', sh).forEach(b => b.onclick = () => { const x = it[0], p = D.days[x.pid.split('-p')[0]].pp[+x.pid.split('-p')[1] - 1]; openExt(EXT[b.dataset.yv].url(p, it[0].v, it[it.length - 1].v)); });
   const krvB = $('[data-krv]', sh); if (krvB) krvB.onclick = async () => { // 개역한글은 본문 속 그 구절 바로 아래에
-    if (!krvOn && !(await loadKRV(S.day))) { toast('개역한글 본문을 불러오지 못했습니다.'); return; }
+    if (!krvOn && !(await loadKRV(S.day))) { toast('개역한글 본문을 불러오지 못했습니다'); return; }
     it.forEach(x => { const k = x.pid + ':' + x.v; if (krvOn) KRV_SHOW.delete(k); else KRV_SHOW.add(k); });
     holdNow(); redrawVerses(S.fl, it); pickMark(it);
     const a = pager && pager.anchor(); if (pager) { pager.layout(); if (a) pager.show(a); }
@@ -1010,7 +1010,7 @@ function verseSheet() {
     verseSheet(); const p0 = $(`p.v[data-pid="${it[0].pid}"][data-v="${it[0].v}"]`, fl); if (p0) keepVisible(p0.getBoundingClientRect());
   };
   const wb = $('[data-whole]', sh); if (wb) wb.onclick = () => { it.forEach(x => { x.s = 0; x.e = x.len; }); S.mode = it.length > 1 ? 'multi' : 'verse'; S.text = it.map(x => vtext(x.pid, x.v)).join(' '); holdNow(); pickMark(it); verseSheet(); };
-  if (!ST.tips.tts) { ST.tips.tts = 1; save(); setTimeout(() => toast('구절을 고를 때 구글 검색 막대가 메뉴를 가리면 사용법 맨 아래 안내를 보세요.', 5200), 600); }
+  if (!ST.tips.tts) { ST.tips.tts = 1; save(); setTimeout(() => toast('구절을 고를 때 구글 검색 막대가 메뉴를 가리면 사용법 맨 아래 안내를 보세요', 5200), 600); }
   $$('[data-ai]', sh).forEach(b => b.onclick = () => {
     const ref = refOf(it), body = selVersesText(it);
     if (b.dataset.ai === 'tc') return openAI(`${ref}\n${body}\n\n${S.mode === 'part' ? TRIG_TC_PART(S.text) : TRIG_TC}`);
@@ -1028,7 +1028,7 @@ function verseSheet() {
     const a = b.dataset.a, ref = refOf(it);
     if (a === 'memo') { const x = it[0]; return go(`#/edit/new?at=${x.pid}:${x.v}${S.mode === 'part' ? '&q=' + encodeURIComponent(S.text) : ''}`); }
     const txt = S.mode === 'part' ? `“${S.text}”\n— ${ref} (개역개정)` : `${ref} (개역개정)\n${selVersesText(it)}`;
-    if (a === 'copy') { copy(txt); toast('복사했습니다.'); }
+    if (a === 'copy') { copy(txt); toast('복사했습니다'); }
     if (a === 'share') share(txt);
     if (a === 'bm') { toggleBm(it[0].pid, it[0].v); holdNow(); redrawVerses(S.fl, it); pickMark(it); toast(isBm(it[0].pid, it[0].v) ? '책갈피를 꽂았습니다.' : '책갈피를 뺐습니다.'); verseSheet(); return; }
     getSelection().removeAllRanges(); hideSheet();
@@ -1048,7 +1048,7 @@ function krvSheet(P) { // 개역한글 줄을 골랐을 때: AI·복사·메모�
     if (a === 'ask') return openAI(`${body}\n\n${P.whole ? TRIG_QA : TRIG_QA_PART(P.text)}\n\n질문: `);
     if (a === 'tc') return openAI(`${body}\n\n${P.whole ? TRIG_TC : TRIG_TC_PART(P.text)}`);
     if (a === 'memo') return go(`#/edit/new?at=${P.pid}:${P.v}&q=${encodeURIComponent(P.text + ' (개역한글)')}`);
-    if (a === 'copy') { copy(`“${P.text}”\n— ${ref} (개역한글)`); toast('복사했습니다.'); }
+    if (a === 'copy') { copy(`“${P.text}”\n— ${ref} (개역한글)`); toast('복사했습니다'); }
     hideSheet();
   });
 }
@@ -1077,7 +1077,7 @@ function passageSheet(day, pid, h) {
   if ($('#ai', sh)) $('#ai', sh).onclick = () => openAI(`${p.ref}\n\n${TRIG_BCS}`);
   $$('[data-a]', sh).forEach(b => b.onclick = () => {
     const a = b.dataset.a;
-    if (a === 'copy') { copy(txt()); toast('본문을 복사했습니다.'); }
+    if (a === 'copy') { copy(txt()); toast('본문을 복사했습니다'); }
     if (a === 'share') share(txt());
     if (a === 'bm') { toggleBm(pid, null); toast(isBm(pid, null) ? '본문에 책갈피를 꽂았습니다.' : '책갈피를 뺐습니다.'); const fl = h.closest('.flow'); if (fl && fl._rerender) fl._rerender(); }
     hideSheet();
@@ -1115,7 +1115,7 @@ function parSheet(day, bx) {
   const sh = $('#sheet');
   sh.innerHTML = `<div class="what">${esc(ref)}</div><div class="acts"><button data-a="copy">${icon('copy')}복사</button><button data-a="share">${icon('share')}공유</button></div>`;
   showSheet();
-  $$('[data-a]', sh).forEach(b => b.onclick = () => { if (b.dataset.a === 'copy') { copy(txt); toast('복사했습니다.'); } else share(txt); hideSheet(); });
+  $$('[data-a]', sh).forEach(b => b.onclick = () => { if (b.dataset.a === 'copy') { copy(txt); toast('복사했습니다'); } else share(txt); hideSheet(); });
 }
 function memoPick(ids) {
   const sh = $('#sheet');
@@ -1130,7 +1130,7 @@ function copy(text) {
   fallbackCopy(text);
 }
 function fallbackCopy(text) { const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} ta.remove(); }
-function share(text) { if (navigator.share) navigator.share({ text }).catch(() => {}); else { copy(text); toast('공유 기능이 없는 화면이라 복사해 두었습니다.'); } }
+function share(text) { if (navigator.share) navigator.share({ text }).catch(() => {}); else { copy(text); toast('공유 기능이 없는 화면이라 복사해 두었습니다'); } }
 function openAI(prompt) {
   if (ST.set.ai === 'none') { toast('AI를 활용하지 않도록 설정되어 있습니다. 설정 › AI 활용에서 바꿀 수 있습니다.'); return; }
   const a = AI[ST.set.ai] || AI.claude;
@@ -1311,7 +1311,7 @@ function vMemoList() {
 function addCat(after) {
   const n = (prompt('새 분류 이름') || '').trim();
   if (!n) return;
-  if (catList().includes(n) || n === '미분류') { toast('이미 있는 분류입니다.'); return; }
+  if (catList().includes(n) || n === '미분류') { toast('이미 있는 분류입니다'); return; }
   ST.cats.push(n); save(); after && after();
 }
 
@@ -1341,9 +1341,9 @@ async function vMemo(id) {
   bindMemoHead(m);
   if (!onlyOrig) { applyFolds(m); bindMemoMenu(m); }
   const text = () => `${m.title || ''}\n${(m.anchors || []).map(a => a.ref).join(', ')}\n\n${$('#mb').innerText}`.trim();
-  $('#mcopy').onclick = () => { copy(text()); toast('메모를 복사했습니다.'); };
+  $('#mcopy').onclick = () => { copy(text()); toast('메모를 복사했습니다'); };
   $('#mshare').onclick = () => share(text());
-  if ($('#mdel')) $('#mdel').onclick = async () => { if (!confirm('이 메모를 지울까요? 되돌릴 수 없습니다.')) return; UM = UM.filter(x => x.id !== m.id); await saveUM(); toast('메모를 지웠습니다.'); go('#/memos', true); };
+  if ($('#mdel')) $('#mdel').onclick = async () => { if (!confirm('이 메모를 지울까요? 되돌릴 수 없습니다.')) return; UM = UM.filter(x => x.id !== m.id); await saveUM(); toast('메모를 지웠습니다'); go('#/memos', true); };
   memoEnhance(m);
 }
 function catPicker(m, after) {
@@ -1461,12 +1461,12 @@ async function vEdit(id, at) {
   $('#es').onclick = async () => {
     const html = cleanHTML(eb.innerHTML).trim();
     const title = $('#et').value.trim() || (eb.innerText.trim().split('\n').find(x => x.trim() && !x.includes('(개역개정)')) || '').slice(0, 40);
-    if (!html && !title) { toast('빈 메모는 저장하지 않습니다.'); return; }
+    if (!html && !title) { toast('빈 메모는 저장하지 않습니다'); return; }
     Object.assign(m, { title, html, cats, anchors, ref: anchors[0] ? anchors[0].ref : '', updated: new Date().toISOString() });
     if (isNew) UM.push(m);
     await origSaveUM(); LEAVE_GUARD = null;
     if (isNew && at) { RETURN_AT = { day: at.split(':')[0].split('-p')[0], at }; history.back(); setTimeout(() => toastGo('메모를 저장했습니다 · 메모 보기 ›', `#/memo/${m.id}`), 400); return; } // 읽다가 쓴 메모: 읽던 구절로
-    toast('메모를 저장했습니다.'); go(`#/memo/${m.id}`, true);
+    toast('메모를 저장했습니다'); go(`#/memo/${m.id}`, true);
   };
 }
 let catPickerTemp = null;
@@ -1687,7 +1687,7 @@ function bindMemoMenuBtns() {
     if (k === 'u') return memoOp(() => document.execCommand('underline'));
     if (k === 'h2' || k === 'h3') return memoOp((mb, r) => blockHeading(mb, r, k.toUpperCase(), null));
     if (k === 'fold') return memoOp((mb, r) => blockHeading(mb, r, 'H3', 'fold'));
-    if (k === 'copy') { copy(`“${txt.trim()}”\n— ${m.title || '메모'} (${APPNAME})`); toast('복사했습니다.'); getSelection().removeAllRanges(); return hideMemoMenu(); }
+    if (k === 'copy') { copy(`“${txt.trim()}”\n— ${m.title || '메모'} (${APPNAME})`); toast('복사했습니다'); getSelection().removeAllRanges(); return hideMemoMenu(); }
     if (k === 'undo' || k === 'redo') { const from = k === 'undo' ? MM.undo : MM.redo, to = k === 'undo' ? MM.redo : MM.undo; if (!from.length) return; to.push($('#mb').innerHTML); $('#mb').innerHTML = from.pop(); memoSaveHTML(m); applyFolds(m); getSelection().removeAllRanges(); return hideMemoMenu(); }
     if (k === 'hl') {
       const p = memoPanel(`<div class="prow">${HL.map((c, i) => `<button class="dot" style="background:${c}" data-c="${c}" aria-label="${HL_NAME[i]}"></button>`).join('')}<button class="ptxt" data-c="x">서식 삭제</button></div>`);
@@ -1739,7 +1739,7 @@ function bindMemoMenuBtns() {
       const p = memoPanel(`<div class="prow"><button class="ptxt" data-s="share">공유하기</button><button class="ptxt" data-s="copy">복사</button><button class="ptxt" data-s="doc">Word(.doc)</button><button class="ptxt" data-s="txt">텍스트(.txt)</button></div>`);
       $$('[data-s]', p).forEach(c => c.onclick = () => {
         const s = c.dataset.s;
-        if (s === 'share') share(body); else if (s === 'copy') { copy(body); toast('복사했습니다.'); }
+        if (s === 'share') share(body); else if (s === 'copy') { copy(body); toast('복사했습니다'); }
         else { const isDoc = s === 'doc', blob = new Blob([isDoc ? `<html><head><meta charset="utf-8"></head><body><p>${esc(body).replace(/\n/g, '<br>')}</p></body></html>` : body], { type: isDoc ? 'application/msword' : 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${(m.title || '메모').slice(0, 30)}-발췌.${isDoc ? 'doc' : 'txt'}`; document.body.appendChild(a); a.click(); a.remove(); }
         getSelection().removeAllRanges(); hideMemoMenu();
       });
@@ -1899,8 +1899,8 @@ function vSet() {
       if (!confirm(`${fmtDate(Date.parse(j.exported))}에 만든 백업으로 지금 기록을 바꿀까요?`)) return;
       const key = ST.set.esvKey; normalize(j.state); ST.set.esvKey = ST.set.esvKey || key; save();
       if (Array.isArray(j.memos)) { UM = j.memos; await saveUM(); }
-      applyView(); toast('백업을 불러왔습니다.'); go('#/', true);
-    } catch (err) { toast('이 앱의 백업 파일이 아닙니다.'); }
+      applyView(); toast('백업을 불러왔습니다'); go('#/', true);
+    } catch (err) { toast('이 앱의 백업 파일이 아닙니다'); }
   };
 }
 

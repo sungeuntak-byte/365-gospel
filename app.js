@@ -1,6 +1,6 @@
 'use strict';
 /* 365 복음 묵상 — 2차 앱 (개인용·배포용 공통 코드, 데이터만 다름) */
-const VERSION = '0.9.0';
+const VERSION = '0.9.1';
 const APPNAME = '365 복음 묵상';
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
@@ -195,7 +195,7 @@ const LOGO = `<svg class="logo" viewBox="0 0 200 172" aria-hidden="true"><g fill
 function bar(title, left = 'back', opts = {}) {
   const l = left === 'back' ? `<button data-act="back" aria-label="뒤로">${icon('back')}</button>` : `<span class="sp"></span>`;
   const r = opts.findOnly ? `<span class="tools"><button data-go="#/find" aria-label="찾기">${icon('search')}</button></span>` : !opts.tools ? '<span class="sp"></span>' : `<span class="tools"><button data-act="ui" class="uib" aria-label="화면 글자 크기"><span class="a">가</span><span class="b">가</span></button>${opts.find === false ? '' : `<button data-go="#/find" aria-label="찾기">${icon('search')}</button>`}</span>`;
-  const t = opts.logo ? `<b class="ttl">${LOGO}<span>${esc(title)}</span></b>` : `<b class="ttl"><span>${esc(title)}</span></b>`;
+  const t = opts.logo ? `<b class="ttl">${LOGO}<span>${esc(title)}</span></b>` : `<b class="ttl gt">${opts.ic ? icon(opts.ic) : ''}<span>${esc(title)}</span></b>`;
   return `<div class="bar">${l}${t}${r}</div>`;
 }
 // 아래 메뉴: 화면마다 알맞게 (아이콘만)
@@ -203,18 +203,18 @@ function bar(title, left = 'back', opts = {}) {
 function nav(on, opts = {}) {
   const ctx = opts.ctx || (on === 'home' ? 'home' : 'other');
   const B = (k, ic, t, h) => `<button class="${k === on ? 'on' : ''}" data-nav="${h}" aria-label="${t}">${ic}</button>`;
-  const home = B('home', icon('home'), '홈', '#/'), memo = B('memo', icon('memo'), '메모', '#/memos'), col = B('col', icon('col'), '모아 보기', '#/col/hl'), find = B('find', icon('search'), '찾기', '#/find');
+  const home = B('home', icon('home'), '홈', '#/'), memo = B('memo', `<span class="mgo">›</span>${icon('memos')}`, '메모로', '#/memos'), col = B('col', icon('col'), '모아 보기', '#/col/hl'), find = B('find', icon('search'), '찾기', '#/find');
   const sort = `<button data-act="sort" aria-label="정렬">${icon('sort')}</button>`;
   const ui = `<button data-act="ui" class="navui" aria-label="화면 글자 크기"><span class="gg"><span class="a">가</span><span class="b">가</span></span></button>`;
   const set = `<button class="${on === 'set' ? 'on' : ''} ${backupDue() ? 'dot' : ''}" data-nav="#/set" aria-label="설정">${icon('gear')}</button>`;
-  const it = ctx === 'home' ? [memo, col, find, ui, set] : ctx === 'memo' ? [home, col, opts.sort ? sort : '', ui, set] : ctx === 'col' ? [home, memo, sort, ui, set] : [home, memo, col, ui, set];
-  return `<nav class="nav ic">${it.filter(Boolean).join('')}</nav>`;
+  const it = (ctx === 'home' ? [memo, col, ui, set] : ctx === 'memo' ? [home, opts.sort ? sort : '', col, ui, set] : ctx === 'col' ? [home, memo, sort, ui, set] : [home, memo, col, ui, set]).filter(Boolean);
+  return `<nav class="nav ic n${it.length}">${it.join('')}</nav>`;
 }
 function sortPicker(btn) { // 정렬 고르기 (메모: 구절·날짜 / 모아 보기: 본문·최근)
   const p = $('#uipop'), memo = /^#\/memos/.test(location.hash);
   if (!p.hidden) { closeOverlay(); return; }
   const cur = memo ? (ST.set.msort || 'verse') : colSort;
-  const opts = memo ? [['verse', '구절 순서'], ['date', '날짜 순서 (최근 것 위)']] : [['text', '본문 순서'], ['recent', '최근 순']];
+  const opts = memo ? [['verse', '구절 순서'], ['date', '최신 순']] : [['text', '본문 순서'], ['recent', '최근 순']];
   p.classList.add('fromnav');
   p.innerHTML = `<div class="lab">정렬</div>${opts.map(([v, t]) => `<button class="srow ${v === cur ? 'on' : ''}" data-sv="${v}">${t}</button>`).join('')}`;
   openOverlay(p);
@@ -291,7 +291,8 @@ function showIntro() {
   b.innerHTML = `<div class="in-wrap"><div class="in-logo" id="inlogo"><svg id="inbook"></svg><div class="in-365" id="in365">365</div><div class="in-name" id="inname">${'복음 묵상'.split('').map(c => `<span>${c === ' ' ? '&nbsp;' : c}</span>`).join('')}</div></div>
     <div class="in-verse" id="inv">${INTRO.map(l => `<span class="ln">${esc(l)}</span>`).join('<br>')}</div><div class="in-ref">로마서 16:25~27</div>
     <div class="in-act"><button class="in-go" id="ingo">들어가기</button><label class="in-chk"><input type="checkbox" id="inchk" ${ST.set.intro ? 'checked' : ''}> 시작 화면 항상 보기</label></div></div>`;
-  b.hidden = false;
+  b.insertAdjacentHTML('afterbegin', '<div class="in-splash"><img src="icons/icon-192.png" alt=""></div>');
+  b.classList.remove('go'); b.hidden = false; setTimeout(() => b.classList.add('go'), 380); // 휴대폰 첫 화면(아이콘)과 똑같이 시작 → 아이콘이 스러지며 글이 떠오름
   const fit = () => {
     const v = $('#inv'); if (!v) return; const w = Math.min(b.clientWidth - 28, 560); let f = 18; v.style.fontSize = f + 'px'; while (f > 9 && v.scrollWidth > w) { f -= .5; v.style.fontSize = f + 'px'; }
     // 책 폭 = “예수 그리스도로 말미암아” 줄 폭, 365 폭 = “복”과 “상”의 가운데 사이
@@ -361,7 +362,7 @@ function cardHTML(day, vv, href, legend) {
   const tp = D.topics[day.t], sb = D.subs[day.s];
   return `<div class="hcard ${legend ? 'lg' : ''}">${legend ? `<span class="legend">${legend}</span>` : ''}
     <button class="hcbody" data-go="${href}"><div class="ctp">${esc(tp.title)}</div><div class="cln"></div><div class="csb">${esc(sb.title)}</div>
-    <p class="snip big">${snipHTML(vv)}</p><div class="cfoot"><div class="refr">— ${esc(fullRef(vv, day))}</div><span class="more">펼쳐 읽기 ›</span></div></button></div>`;
+    <p class="snip big">${snipHTML(vv)}</p><div class="cfoot"><div class="refr">${esc(fullRef(vv, day))}</div><span class="more">펼쳐 읽기 ›</span></div></button></div>`;
 }
 async function vHome() {
   const t = todayInfo(), id = todayDayId(), day = D.days[id];
@@ -379,7 +380,7 @@ async function vHome() {
     main = cardHTML(d2, vv, `#/read/${d2.id}?at=${vv[0][0]}:${vv[0][1]}${T ? '&t=1' : ''}`, '최근 읽은 곳');
   }
   const vols = `<div class="vols">${[1, 2, 3].map(n => `<button class="volc" style="--c:var(--v${n})" data-go="#/vol/${n}"><b>${vlabel(n)}</b><div class="lab">${roundLabel(n)}</div></button>`).join('')}</div>`;
-  $('#app').innerHTML = `<div class="screen homes">${bar(APPNAME, '', { logo: true })}
+  $('#app').innerHTML = `<div class="screen homes">${bar(APPNAME, '', { logo: true, findOnly: true })}
     <div class="body home">
       <div class="htabs" id="ht">${[['date', '일자별'], ['topic', '주제별']].map(([v, t]) => `<button data-v="${v}" class="${tab === v ? 'on' : ''}">${tab === v ? `<span class="tgrp"><span>${t}</span><i class="tsep"></i><span class="ttoc" data-toc="${v}">${icon('toc')}<span class="tt">목차</span></span></span>` : t}</button>`).join('')}<button data-v="today" class="wide ${tab === 'today' ? 'on' : ''}">오늘의 말씀</button></div>
       ${main}
@@ -436,7 +437,7 @@ async function vToc(kind, vol, fresh) {
   vol = vol || ST.set.vol;
   await loadVol(vol);
   const y = fresh ? 0 : window.scrollY;
-  $('#app').innerHTML = `<div class="screen">${bar(kind === 'date' ? '일자별 목차' : '주제별 목차', 'back', { findOnly: true })}<div class="body">
+  $('#app').innerHTML = `<div class="screen">${bar(kind === 'date' ? '일자별 목차' : '주제별 목차', 'back', { findOnly: true, ic: 'toc' })}<div class="body">
     <div class="seg" id="tv">${[1, 2, 3].map(n => `<button data-v="${n}" class="${n === vol ? 'on' : ''}">${vlabel(n)}</button>`).join('')}</div>
     ${kind === 'date' ? dateTocHTML(vol) : topicTreeHTML(vol)}</div>${nav('')}</div>`;
   window.scrollTo(0, y);
@@ -492,9 +493,10 @@ function saveGuide(k) {
 }
 function aiGo(name, url, tip) { // 앱 화면을 살짝 흐리며 안내 → AI 창으로
   let f = $('#aifade'); if (!f) { f = document.createElement('div'); f.id = 'aifade'; f.className = 'aifade'; document.body.appendChild(f); }
-  f.innerHTML = `<div><b>${esc(name)}(으)로 넘어갑니다</b><small>${esc(tip)}</small></div>`; f.classList.remove('out'); f.hidden = false;
-  setTimeout(() => openExt(url), 320);
-  setTimeout(() => { f.classList.add('out'); setTimeout(() => { f.hidden = true; }, 400); }, 2600);
+  const paste = tip !== '보내기만 누르면 됩니다.';
+  f.innerHTML = `<div><b>${paste ? '붙여넣으세요' : '보내기만 누르세요'}</b><small>${esc(name)}(으)로 넘어갑니다</small></div>`; f.classList.remove('out'); f.hidden = false;
+  setTimeout(() => openExt(url), 800);
+  setTimeout(() => { f.classList.add('out'); setTimeout(() => { f.hidden = true; }, 400); }, 3200);
 }
 function vSetup() {
   const s = ST.set;
@@ -838,10 +840,13 @@ function bindFlow(fl, day, rerender) {
   fl.addEventListener('contextmenu', e => { if (e.target.closest('h2.ph')) e.preventDefault(); });
   fl._rerender = rerender;
   ownSelect(fl, {
-    accept: n => !!(n.nodeType === 3 ? n.parentElement : n).closest('p.v .t'),
-    skip: tg => !!tg.closest('button,sup.mm,h2.ph,.bx,.dvbar,.deep .dh'),
+    accept: n => !!(n.nodeType === 3 ? n.parentElement : n).closest('p.v .t,.bx.krv'),
+    skip: tg => !!tg.closest('button,sup.mm,h2.ph,.dvbar,.deep .dh'),
     start: () => { if (sheetOpen()) hideSheet(); },
-    done: (rg, rect) => { const si = selFromRange(rg); if (!si) { try { CSS.highlights.delete('pick'); } catch (e) {} return; } selInfo = si; selHeld = true; verseSheet(); keepVisible(rect); },
+    done: (rg, rect) => {
+      const el = n => (n.nodeType === 1 ? n : n.parentElement), bx = el(rg.startContainer).closest('.bx.krv');
+      if (bx) { const t = rg.toString().trim(); if (!t) return; krvSheet({ fl, pid: bx.dataset.pid, v: +bx.dataset.v, text: t, whole: t === bx.textContent.trim() }); keepVisible(rect); return; }
+      const si = selFromRange(rg); if (!si) { try { CSS.highlights.delete('pick'); } catch (e) {} return; } selInfo = si; selHeld = true; verseSheet(); keepVisible(rect); },
   });
 }
 
@@ -1029,6 +1034,24 @@ function verseSheet() {
     if (a === 'share') share(txt);
     if (a === 'bm') { toggleBm(it[0].pid, it[0].v); holdNow(); redrawVerses(S.fl, it); pickMark(it); toast(isBm(it[0].pid, it[0].v) ? '책갈피를 꽂았습니다.' : '책갈피를 뺐습니다.'); verseSheet(); return; }
     getSelection().removeAllRanges(); hideSheet();
+  });
+}
+function krvSheet(P) { // 개역한글 줄을 골랐을 때: AI·복사·메모만
+  selInfo = null; selHeld = true;
+  const sh = $('#sheet'); sh.classList.add('dk'); const ai = ST.set.ai !== 'none';
+  const ref = refOf([{ pid: P.pid, v: P.v }]);
+  const B = (a, ic, lab) => `<button class="vb" data-pa="${a}" aria-label="${lab}">${icon(ic)}<small>${lab}</small></button>`;
+  sh.innerHTML = `<div class="vsh"><div class="vtop"><span>개역한글 · ${esc(ref)}</span></div>
+    <div class="vgrid2 par ${ai ? '' : 'noai'}">${ai ? `<button class="aib" data-pa="ask">${icon('ask')}<span>AI와<br>간단 Q&amp;A</span></button><button class="aib" data-pa="tc">${icon('gem')}<span>AI로<br>번역 비교</span></button>` : ''}<div class="vrow">${B('copy', 'copy', '복사')}${B('memo', 'memo', '메모')}</div></div></div>`;
+  if (sh.hidden) showSheet();
+  const body = `${ref} (개역한글)\n${P.text}`;
+  $$('[data-pa]', sh).forEach(b => b.onclick = () => {
+    const a = b.dataset.pa;
+    if (a === 'ask') return openAI(`${body}\n\n${P.whole ? TRIG_QA : TRIG_QA_PART(P.text)}\n\n질문: `);
+    if (a === 'tc') return openAI(`${body}\n\n${P.whole ? TRIG_TC : TRIG_TC_PART(P.text)}`);
+    if (a === 'memo') return go(`#/edit/new?at=${P.pid}:${P.v}&q=${encodeURIComponent(P.text + ' (개역한글)')}`);
+    if (a === 'copy') { copy(`“${P.text}”\n— ${ref} (개역한글)`); toast('복사했습니다.'); }
+    hideSheet();
   });
 }
 function holdNow() { selHeld = true; clearTimeout(holdT); try { getSelection().removeAllRanges(); } catch (e) {} }
@@ -1280,7 +1303,7 @@ function vMemoList() {
   const allOpen = groups.every(([c]) => mOpen[c]);
   const list = `<div class="card mtoc">${groups.map(([c, arr]) => `<button class="crow ${mOpen[c] ? 'open' : ''}" data-cat="${esc(c)}"><span>${esc(c)}</span><span class="cnt">${arr.length}${fx(mOpen[c])}</span></button>${mOpen[c] ? `<div class="cbody">${arr.length ? arr.map(m => memoRow(m, c)).join('') : '<div class="empty small">아직 이 분류에 넣은 메모가 없습니다.</div>'}</div>` : ''}`).join('')}
       <button class="crow add" id="addcat"><span>＋ 분류 추가</span></button></div>`;
-  $('#app').innerHTML = `<div class="screen">${bar('메모', 'back', { findOnly: true })}<div class="body">
+  $('#app').innerHTML = `<div class="screen">${bar('메모', 'back', { findOnly: true, ic: 'memos' })}<div class="body">
     <div class="mhead"><b>Memo · 묵상&amp;연구</b><span class="row"><button class="btn sm" data-go="#/edit/new">${icon('pen')}새 메모</button><button class="xall" id="mx" aria-label="${allOpen ? '모두 접기' : '모두 펼치기'}">${icon(allOpen ? 'collapse' : 'expand')}</button></span></div>
     ${list}</div>${nav('memo', { ctx: 'memo', sort: true })}</div>`;
   $('#mx').onclick = () => { mOpen = {}; if (!allOpen) groups.forEach(([c]) => mOpen[c] = true); vMemoList(); };
@@ -1302,7 +1325,7 @@ async function vMemo(id) {
   const st = styleShort(m), cs = catsOf(m);
   const badges = (cs.length ? cs.map(c => `<button class="tag cat" data-pick>${esc(c)}</button>`).join('') : '<button class="tag cat un" data-pick>미분류</button>') + (st ? `<span class="tag style">${st}</span>` : '');
   const hasOrig = !!m.orig, onlyOrig = hasOrig && !m.html;
-  $('#app').innerHTML = `<div class="screen">${bar('메모', 'back', { findOnly: true })}
+  $('#app').innerHTML = `<div class="screen">${bar('메모', 'back', { findOnly: true, ic: 'memos' })}
     <div class="body memo">
       <div class="row between"><span class="lab">${memoDates(m)}</span><span class="row" style="gap:5px">${badges}</span></div>
       <h1>${esc(m.title || '(제목 없음)')}</h1>
@@ -1947,7 +1970,7 @@ function vHelp() {
     ${sec('구절 고르기 · 표시', `구절을 길게 누르면 그 낱말이 골라지고, 손을 떼지 않고 그대로 끌면 원하는 데까지 넓어집니다. 손을 떼면 아래에 메뉴가 뜹니다. 휴대폰의 복사·검색 메뉴는 뜨지 않습니다. 한 절 전체는 메뉴 오른쪽 위 [구절 전체]로 고릅니다. 다시 고르려면 다시 길게 누르면 됩니다. 윗줄은 ${ic('hl')} 형광펜, <b>U</b> 밑줄, <b>B</b> 진하게, ${ic('er')} 지우개, 아랫줄은 ${ic('memo')} 메모, ${ic('copy')} 복사, ${ic('share')} 공유, ${ic('bm')} 책갈피입니다. 서식은 눌러도 메뉴가 닫히지 않아 연달아 고를 수 있습니다. 일자별에서 하든 주제별에서 하든 같은 자리에 남습니다.`, FIG.mark())}
     ${sec('메모', `아래 메뉴 “메모”에서 분류별로 보고 “새 메모”로 씁니다. 구절 메뉴의 ${ic('memo')} 메모로 쓰면 그 구절에 걸리고, 본문에 작은 M이 붙습니다. AI 답을 붙여 넣으면 서식을 살리고, “요약”과 “상세”가 있으면 어디를 접을지 묻습니다. 저장된 메모에서 글을 끌어 고르면 서식 메뉴가 뜹니다. 메모 머리의 ${ic('flag')} 대표 구절, ${ic('link')} 관련 구절을 누르면 그 본문으로 가고 “메모로 돌아가기 ›”로 돌아옵니다.`, `<div class="hrow"><span>${ic('flag')}<b>대표 구절 · 요 3:16</b></span></div><div class="hrow"><span>${ic('link')}관련 구절</span><span class="pastef">롬 5:8</span><span class="pastef">요일 4:10</span></div>`)}
     ${sec('모아 보기 · 찾기', `모아 보기에는 하이라이트와 책갈피가 모입니다. 아래 메뉴의 ${ic('search')} 찾기에서 구절(예: 요 3:16)이나 낱말을 찾고, 범위를 전체 · 본문 · 메모 중에서 고릅니다. 결과는 본문과 메모로 나뉘어 보입니다.`, '<div class="hrow"><span class="pastef on">전체</span><span class="pastef">본문</span><span class="pastef">메모</span></div>')}
-    ${ai ? tier('③ AI 활용') + sec('AI 활용 아이콘 세 가지', `구절을 고른 뒤 ${ic('ask')} AI와 간단 Q&A, ${ic('gem')} AI로 번역 비교를 누릅니다. 구절 표시 옆 ${ic('cmp')} 나침반은 AI로 배경·문맥 살피기입니다. 누르면 연결한 AI 창이 열리고 구절과 요청이 입력칸에 채워져 있습니다. 보내기만 누르면 됩니다(Gemini는 붙여넣기). Claude가 “주의하세요” 경고를 띄워도 이 앱이 만든 요청이니 보내셔도 됩니다. 최종 판단은 스스로 내리며 묵상하세요.`, FIG.ai()) + sec('AI 지침', '설정 › AI 활용에서 세 지침을 “AI에 저장”해 두어야 AI가 짧은 요청만으로 지침대로 답합니다. 지침은 “전문 보기”로 읽고 “고치기”로 바꿀 수 있습니다. 붙여 넣을 때 AI가 “외부 지시문일 수 있다”는 안내를 띄울 수 있는데, 이 앱의 성경 읽기 지침이니 읽어 보고 보내시면 됩니다. 연결할 AI를 바꾸면 새 AI에 지침을 다시 저장해 주세요.') : ''}
+    ${ai ? tier('③ AI 활용') + sec('AI 활용 아이콘 세 가지', `구절을 고른 뒤 ${ic('ask')} AI와 간단 Q&A, ${ic('gem')} AI로 번역 비교를 누릅니다. 구절 표시 옆 ${ic('cmp')} 나침반은 AI로 배경·문맥 살피기입니다. 누르면 잠시 “붙여넣으세요” 안내가 뜬 뒤 연결한 AI 창이 열립니다. 구절과 요청은 이미 복사되어 있으니, Claude·Gemini는 입력칸을 길게 눌러 붙여넣기 한 뒤 보내면 됩니다. ChatGPT는 입력칸에 채워진 채 열리니 보내기만 누르면 됩니다. 본문 아래 펼친 개역한글 줄도 길게 눌러 고르면 AI에게 물을 수 있습니다. 최종 판단은 스스로 내리며 묵상하세요.`, FIG.ai()) + sec('AI 지침', '설정 › AI 활용에서 세 지침을 “AI에 저장”해 두어야 AI가 짧은 요청만으로 지침대로 답합니다. 지침은 “전문 보기”로 읽고 “고치기”로 바꿀 수 있습니다. 붙여 넣을 때 AI가 “외부 지시문일 수 있다”는 안내를 띄울 수 있는데, 이 앱의 성경 읽기 지침이니 읽어 보고 보내시면 됩니다. 연결할 AI를 바꾸면 새 AI에 지침을 다시 저장해 주세요.') : ''}
     ${tier('더 알아두기')}
     ${sec('다른 번역 보기', `구절 표시 옆 ${ic('dual', 'on')}를 누르면 그 본문 아래에만 번역 줄이 나타납니다. 개역한글(⌄)은 앱 안에서 각 구절 아래에 바로 보이고, ↗는 YouVersion(성경 앱)에서 그 본문을 엽니다. 구절 메뉴 맨 위 상자의 개역한글도 메뉴 안에 바로 펼쳐집니다.`, `<div class="hrow ph"><b>창세기 6:5~7</b><span>${ai ? ic('cmp') : ''}${ic('dual', 'on')}</span></div><div class="hrow dvl"><span>개역한글 ⌄</span><span>·</span><span>ESV ↗</span><span>|</span><span>새번역 ↗</span><span>·</span><span>NIV ↗</span></div>`)}
     ${sec('더 깊고 넓게 읽기', '어떤 날은 본문 끝에 “더 깊고 넓게 읽기” 칸이 있습니다. 누르면 그날 말씀과 이어지는 긴 본문이 펼쳐집니다. 읽기 완료와는 따로입니다.', `<div class="hrow deepf"><span>더 깊고 넓게 읽기 · 창 7</span><span>⌄</span></div>`)}

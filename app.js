@@ -1,6 +1,6 @@
 'use strict';
 /* 365 복음 묵상 — 2차 앱 (개인용·배포용 공통 코드, 데이터만 다름) */
-const VERSION = '0.6.0';
+const VERSION = '0.6.1';
 const APPNAME = '365 복음 묵상';
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
@@ -130,7 +130,7 @@ async function boot() {
     });
     const fromNotify = /[?&]n=1/.test(location.hash);
     route();
-    if (ST.set.setupDone && ST.set.intro && !fromNotify && !introRecent()) showIntro();
+    if ((!ST.set.setupDone || ST.set.intro) && !fromNotify && !introRecent()) showIntro(); // 처음 열 때도 로마서 화면부터
     packCheck(); setTimeout(backupNag, 2500);
     newYearCheck();
     if (ST.set.setupDone && ST.seenVer !== VERSION) { const n = Object.values(D.extra).reduce((a, x) => a + x.length, 0); if (ST.seenVer && n) setTimeout(() => toast(`새로 더해진 말씀이 있습니다 · 더 깊고 넓게 읽기 ${n}곳`, 4200), 1500); ST.seenVer = VERSION; save(); }

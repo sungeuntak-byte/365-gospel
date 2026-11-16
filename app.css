@@ -631,3 +631,6 @@ input[type=range],input[type=checkbox]{accent-color:var(--acc)}
 .card.intro .ih svg.i{width:24px;height:24px}
 .tcard .tnote{margin-top:12px;font-size:13px;color:var(--sand)}
 .hcard .tocgo{top:-12px;right:12px;background:var(--page);padding:0 6px;font-size:13px}
+/* 6.1: 홈 세 버튼도 위 막대 아래에 고정 · 본문만 움직임 */
+.home .htabs{position:sticky;top:calc(50px * var(--ui) + var(--safe-t));z-index:8;background:var(--page);margin:-16px -16px 0;padding:12px 16px 10px;box-shadow:0 6px 8px -8px rgba(0,0,0,.18)}
+html,body{overscroll-behavior-y:none}

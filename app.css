@@ -827,3 +827,18 @@ html,body{overscroll-behavior-y:none}
 .aifade small{font-size:13px;opacity:.8}
 .vgrid2.par{grid-template-columns:1fr 1fr 1.6fr}
 .vgrid2.par .vrow{grid-row:1;grid-column:3}
+
+/* ===== 9차-3 ===== */
+.in-365,.in-name{font-family:var(--serif)!important}
+.in-365{font-weight:700}.in-name{font-weight:600}
+.rptabs{align-items:center}
+.rptabs .rpx{margin-left:auto;flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px}
+.rptabs .rpx svg.i{width:24px;height:24px;color:#f3d65e}
+.rpanel{padding-top:4px}
+.pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.pgrid .aib{height:76px;font-size:12.5px}
+.pgrid .aib svg.i{width:25px;height:25px}
+.bx,.bx *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.rptabs{display:flex}
+.rptabs>button{flex:1 1 0;min-width:0}
+.rptabs>button.rpx{flex:0 0 46px}

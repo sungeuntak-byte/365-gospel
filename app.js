@@ -1,6 +1,6 @@
 'use strict';
 /* 365 복음 묵상 — 2차 앱 (개인용·배포용 공통 코드, 데이터만 다름) */
-const VERSION = '0.9.1';
+const VERSION = '0.9.2';
 const APPNAME = '365 복음 묵상';
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
@@ -321,8 +321,8 @@ function route() {
   if (pager) { pager.destroy(); pager = null; }
   const h = location.hash.replace(/^#\/?/, '');
   const [path, qs] = h.split('?');
-  const seg = path.split('/');
-  if (seg[0] !== 'read') clearDual(); // 홈·목차·메모로 나가면 대역 해제
+  const seg = path.split('/'), q0 = new URLSearchParams(qs || '');
+  if (seg[0] !== 'read' && !(seg[0] === 'edit' && seg[1] === 'new' && q0.get('at'))) clearDual(); // 홈·목차·메모로 나가면 대역 해제 (읽다가 메모 쓰러 갈 때는 유지)
   const q = new URLSearchParams(qs || '');
   window.scrollTo(0, 0);
   if (!ST.set.setupDone && seg[0] !== 'setup' && seg[0] !== 'help' && seg[0] !== 'tour') return go('#/setup', true);
@@ -784,8 +784,7 @@ function readPanel(day, topic, memo) {
     return '';
   };
   const draw = () => {
-    p.innerHTML = `<div class="rph"><button data-rp="close" aria-label="닫기">${icon('check')}</button></div>
-      <div class="rptabs">${tabs.map(([k, t]) => `<button data-tab="${k}" class="${RP_TAB === k ? 'on' : ''}">${t}</button>`).join('')}</div>
+    p.innerHTML = `<div class="rptabs">${tabs.map(([k, t]) => `<button data-tab="${k}" class="${RP_TAB === k ? 'on' : ''}">${t}</button>`).join('')}<button class="rpx" data-rp="close" aria-label="닫기">${icon('check')}</button></div>
       ${RP_TAB ? `<div class="rpsub">${sub(RP_TAB)}</div>` : ''}`;
   };
   draw(); openOverlay(p);
@@ -994,8 +993,7 @@ function verseSheet() {
   const B = (attr, inner, lab, onc) => `<button class="vb ${onc ? 'on' : ''}" ${attr} aria-label="${lab}">${inner}<small>${lab}</small></button>`;
   const krvOn = it.every(x => KRV_SHOW.has(x.pid + ':' + x.v));
   sh.innerHTML = `<div class="vsh">
-    <div class="vtop"><span>다른 역본</span>${partial ? '<button class="whole" data-whole="1">구절 전체</button>' : ''}</div>
-    <div class="dvbar inmenu"><button class="dv ${krvOn ? 'on' : ''}" data-krv="1">개역한글<span class="car">${krvOn ? '⌃' : '⌄'}</span></button><span class="sep">·</span><button class="dv ext" data-yv="esv">ESV<span class="car">↗</span></button><span class="bar2"></span>${['saenew', 'niv'].map(k => `<button class="dv ext" data-yv="${k}">${EXT[k].name}<span class="car">↗</span></button>`).join('<span class="sep">·</span>')}</div>
+    <div class="vtop"><span>${esc(refOf(it))}</span>${partial ? '<button class="whole" data-whole="1">구절 전체</button>' : ''}</div>
 
     ${SH_POP ? `<div class="pop">${SH_POP === 'hl' ? HL.map((c, i) => `<button class="dot ${on('hl', c) ? 'on' : ''}" style="background:${c}" data-mk="hl" data-c="${c}" aria-label="${HL_NAME[i]} 칠하기"></button>`).join('') : UL.map(c => `<button class="ulb ${on('ul', c) ? 'on' : ''}" style="--c:${c}" data-mk="ul" data-c="${c}" aria-label="밑줄"></button>`).join('')}</div>` : ''}
     <div class="vgrid2 ${ai ? '' : 'noai'}">${ai ? `<button class="aib" data-ai="ask">${icon('ask')}<span>AI와<br>간단 Q&amp;A</span></button>` : ''}<div class="vrow">${B('data-pop="hl"', `<span class="hlg">${icon('hl')}</span>`, '형광펜', hlOn || SH_POP === 'hl')}${B('data-pop="ul"', '<span class="uglyph">U</span>', '밑줄', ulOn || SH_POP === 'ul')}${B('data-mk="b"', '<span class="bglyph">B</span>', '진하게', on('b'))}${B('data-mk="clear"', icon('er'), '지우개')}</div>
@@ -1042,7 +1040,7 @@ function krvSheet(P) { // 개역한글 줄을 골랐을 때: AI·복사·메모�
   const ref = refOf([{ pid: P.pid, v: P.v }]);
   const B = (a, ic, lab) => `<button class="vb" data-pa="${a}" aria-label="${lab}">${icon(ic)}<small>${lab}</small></button>`;
   sh.innerHTML = `<div class="vsh"><div class="vtop"><span>개역한글 · ${esc(ref)}</span></div>
-    <div class="vgrid2 par ${ai ? '' : 'noai'}">${ai ? `<button class="aib" data-pa="ask">${icon('ask')}<span>AI와<br>간단 Q&amp;A</span></button><button class="aib" data-pa="tc">${icon('gem')}<span>AI로<br>번역 비교</span></button>` : ''}<div class="vrow">${B('copy', 'copy', '복사')}${B('memo', 'memo', '메모')}</div></div></div>`;
+    <div class="pgrid">${ai ? `<button class="aib" data-pa="ask">${icon('ask')}<span>AI와<br>간단 Q&amp;A</span></button><button class="aib" data-pa="tc">${icon('gem')}<span>AI로<br>번역 비교</span></button>` : ''}<button class="aib" data-pa="copy">${icon('copy')}<span>복사</span></button><button class="aib" data-pa="memo">${icon('memo')}<span>메모</span></button></div></div>`;
   if (sh.hidden) showSheet();
   const body = `${ref} (개역한글)\n${P.text}`;
   $$('[data-pa]', sh).forEach(b => b.onclick = () => {

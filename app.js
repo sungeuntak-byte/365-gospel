@@ -1,6 +1,6 @@
 'use strict';
 /* 365 복음 묵상 — 2차 앱 (개인용·배포용 공통 코드, 데이터만 다름) */
-const VERSION = '0.9.3';
+const VERSION = '0.9.4';
 const APPNAME = '365 복음 묵상';
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
@@ -292,7 +292,7 @@ function showIntro() {
     <div class="in-verse" id="inv">${INTRO.map(l => `<span class="ln">${esc(l)}</span>`).join('<br>')}</div><div class="in-ref">로마서 16:25~27</div>
     <div class="in-act"><button class="in-go" id="ingo">들어가기</button><label class="in-chk"><input type="checkbox" id="inchk" ${ST.set.intro ? 'checked' : ''}> 시작 화면 항상 보기</label></div></div>`;
   b.insertAdjacentHTML('afterbegin', '<div class="in-splash"><img src="icons/icon-192.png" alt=""></div>');
-  b.classList.remove('go'); b.hidden = false; setTimeout(() => b.classList.add('go'), 380); // 휴대폰 첫 화면(아이콘)과 똑같이 시작 → 아이콘이 스러지며 글이 떠오름
+  b.classList.remove('go'); b.hidden = false; setTimeout(() => b.classList.add('go'), 650); // 휴대폰 첫 화면(아이콘)과 똑같이 시작 → 아이콘이 스러지며 글이 떠오름
   const fit = () => {
     const v = $('#inv'); if (!v) return; const w = Math.min(b.clientWidth - 28, 560); let f = 18; v.style.fontSize = f + 'px'; while (f > 9 && v.scrollWidth > w) { f -= .5; v.style.fontSize = f + 'px'; }
     // 책 폭 = “예수 그리스도로 말미암아” 줄 폭, 365 폭 = “복”과 “상”의 가운데 사이

@@ -860,3 +860,18 @@ body[data-theme="bright"] #inbook{color:#192c46}
 .readbtn{font-size:14.5px;padding:6px 16px;gap:7px}
 .readbtn svg.i{width:22px;height:22px;color:#5a9a6a}
 .readbtn.on svg.i{color:#3f8a55}
+
+/* ===== 9차-5: 배경색 역할표 ===== */
+:root{--tabon:#4A5670;--tabsh:#333d50;--taboffbg:#ECEAE6;--tabofffg:#4A4F57;--tabofflin:#d6d3cd}
+body[data-theme="clear"]{--tabon:#3b625f;--tabsh:#284442;--taboffbg:#E3E9E8;--tabofffg:#3F4B4A;--tabofflin:#cdd8d6}
+body[data-theme="bright"]{--tabon:#7d6650;--tabsh:#5e4b3a;--taboffbg:#ECE6DC;--tabofffg:#5a4d40;--tabofflin:#ddd3c4}
+.htabs button{background:var(--taboffbg);color:var(--tabofffg);border-color:var(--tabofflin)}
+.htabs button.on{background:var(--tabon);border-color:var(--tabon);color:#fff;box-shadow:0 3px 0 var(--tabsh),0 5px 10px rgba(40,50,70,.2)}
+.nextbtn{background:var(--tabon)}
+.mhead .btn.sm{background:var(--taboffbg);color:var(--tabofffg);border-color:var(--tabofflin)}
+.mhead .btn.sm svg.i{color:var(--tabofffg)}
+.homes .daterow .d{color:#6f5236}
+/* 시작: 휴대폰 첫 화면 아이콘과 같은 크기에서 천천히 */
+.in-splash img{width:min(34vw,150px);height:auto}
+.in-splash{transition:opacity .8s ease,transform .8s ease}
+.introbox .in-wrap{transition:opacity .8s ease .2s,transform .8s ease .2s}

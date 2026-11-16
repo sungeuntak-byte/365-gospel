@@ -757,3 +757,46 @@ html,body{overscroll-behavior-y:none}
 .memo .mbody:not(.ed),body[data-font] .memo .mbody:not(.ed){font-family:"BookSans",var(--sans)!important;font-size:calc(var(--fs) + 1px);line-height:1.85}
 /* 처음 설정: 경로 띠 */
 .pathband{display:inline-block;background:#f3e3c6;border:1px solid #c7ad8c;border-radius:12px;padding:0 9px;font-weight:700;color:#6f5236;line-height:1.6;text-indent:0}
+
+/* ===== 9차 ===== */
+/* 시작 화면: 서서히 나타남 · 365/복음 묵상 위아래 여백 맞춤 */
+.introbox:not([hidden]){animation:infade .45s ease-out}
+@keyframes infade{from{opacity:0}to{opacity:1}}
+.in-logo{padding:48px 0 24px}
+/* 홈: 제목·아이콘 크게, 켜진 버튼 회청색, 날짜 갈색, 목차 덩어리 */
+.homes .bar .ttl{font-size:17.6px}
+.homes .bar .ttl svg.logo{width:2.1em;height:1.8em}
+.htabs button.on{background:#4A5670;border-color:#4A5670;color:#fff;box-shadow:0 3px 0 #333d50,0 5px 10px rgba(40,50,70,.22)}
+.tgrp{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.tsep{display:inline-block;width:1px;height:16px;background:rgba(255,255,255,.45)}
+.ttoc{display:inline-flex;align-items:center;gap:3px;font-size:.9em;font-weight:700}
+.ttoc svg.i{width:17px;height:17px;color:#fff}
+.homes .daterow .d{color:#6f5236}
+.hcard .tocgo{display:none}
+/* 책 속 머리: 숨 쉴 틈 */
+.rhead{padding-bottom:12px}
+.rh1{padding-bottom:8px}
+.rdate{margin-top:10px}
+.rhead:not(.tm) .rtp{margin-top:6px}
+.rhead .cln{margin:7px auto}
+.rhead.tm .rtp{margin-top:12px}
+/* 메뉴: 위/아래 · 줄임 */
+.sheet.dk.compact .vtop{display:none}
+.sheet.dk.compact{gap:6px;padding-top:6px;padding-bottom:calc(6px + var(--safe-b))}
+.sheet.dk.compact .vgrid2{grid-auto-rows:52px}.sheet.dk.compact .vgrid2 .vrow{height:52px}.sheet.dk.compact .vb{height:46px}.sheet.dk.compact .vb small{display:none}
+/* 다음·이전 날: 밀리듯 */
+.reader.sl-next .pages{animation:slnext .34s cubic-bezier(.22,.7,.25,1)}
+.reader.sl-prev .pages{animation:slprev .34s cubic-bezier(.22,.7,.25,1)}
+@keyframes slnext{from{transform:translateX(42%);opacity:.2}to{transform:none;opacity:1}}
+@keyframes slprev{from{transform:translateX(-42%);opacity:.2}to{transform:none;opacity:1}}
+/* AI로 넘어가는 안내 */
+.aifade{position:fixed;inset:0;z-index:70;background:rgba(250,246,239,.82);display:flex;align-items:center;justify-content:center;animation:infade .25s ease-out;transition:opacity .4s}
+.aifade.out{opacity:0}
+.aifade div{background:var(--navy);color:#fff;border-radius:14px;padding:16px 20px;max-width:300px;text-align:center;display:flex;flex-direction:column;gap:6px}
+.aifade small{font-size:12.5px;opacity:.85;line-height:1.6}
+/* 정렬 판 · 눌러 가는 안내 */
+.uipop .srow{display:block;width:100%;text-align:left;padding:9px 10px;border-radius:8px;font-size:14px;color:var(--ink)}
+.uipop .srow.on{background:var(--sand-bg);font-weight:700;color:var(--v1)}
+.toast.go{cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+/* 메모 목록 위 글씨 고딕 */
+.mhead b{font-family:var(--sans);font-weight:700}

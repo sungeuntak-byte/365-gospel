@@ -1,6 +1,6 @@
 'use strict';
 /* 365 복음 묵상 — 2차 앱 (개인용·배포용 공통 코드, 데이터만 다름) */
-const VERSION = '0.9.12';
+const VERSION = '0.9.13';
 const APPNAME = '365 복음 묵상';
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
@@ -485,15 +485,15 @@ function guideCards() {
   const ge = ST.guideEdit || {}, an = AI[ST.set.ai] ? AI[ST.set.ai].name : '';
   return GUIDE_ORDER.filter(([k]) => D.guides[k]).map(([k, t]) => {
     const prev = guideText(k).split('\n').map(x => x.replace(/^#+\s*/, '').trim()).filter(Boolean).slice(1, 4).join(' ');
-    const sv = ST.guideSaved[k];
+    const sv = ST.guideSaved[k], ok = !!sv && (!sv.ai || sv.ai === ST.set.ai);
     return `<div class="gcard"><div class="gh"><b>${t}</b>${ge[k] ? '<span class="gbadge">수정본</span>' : ''}</div>
       <div class="gprev">${esc(prev)}</div>
-      <div class="gbtns"><button class="gb" data-gv="${k}">전문 보기</button><button class="gb" data-ge="${k}">수정</button><button class="gb dark ${sv ? 'done' : ''}" data-gs="${k}">${sv ? `${icon('check')}저장 완료` : 'AI에 저장'}</button></div>
+      <div class="gbtns"><button class="gb" data-gv="${k}">전문 보기</button><button class="gb" data-ge="${k}">수정</button><button class="gb dark ${ok ? 'done' : ''}" data-gs="${k}">${ok ? '<span class="cb"></span>저장 완료' : 'AI에 저장'}</button></div>
       <div class="gfoot"><span>${sv ? `마지막 저장 ${fmtDate(typeof sv === 'number' ? sv : sv.t)}${sv.ai && AI[sv.ai] ? ' · ' + AI[sv.ai].name : ''}` : '아직 저장하지 않음'}</span>${ge[k] ? `<button data-gr="${k}">초기화</button>` : ''}</div></div>`;
   }).join('');
 }
 function bindGuideCards(redraw) {
-  $$('[data-gs]').forEach(b => b.onclick = () => { saveGuide(b.dataset.gs); redraw && setTimeout(redraw, 300); });
+  $$('[data-gs]').forEach(b => b.onclick = () => { if (b.classList.contains('done')) { toast('이미 저장했습니다'); return; } saveGuide(b.dataset.gs); redraw && setTimeout(redraw, 300); });
   $$('[data-gv]').forEach(b => b.onclick = () => {
     const k = b.dataset.gv, m = $('#modal');
     m.innerHTML = `<div class="card gview"><b>${GUIDE_ORDER.find(x => x[0] === k)[1]}</b><div class="gfull">${esc(guideText(k))}</div><button class="btn dark" id="gvc">닫기</button></div>`;
@@ -504,9 +504,9 @@ function bindGuideCards(redraw) {
     m.innerHTML = `<div class="card gview"><div class="ghead"><button id="gec" aria-label="닫기">${icon('x')}</button><b>${GUIDE_ORDER.find(x => x[0] === k)[1]} 수정</b><button id="ges" class="topsave" aria-label="저장">${icon('check')}</button></div><textarea class="field gedit" id="get">${esc(guideText(k))}</textarea><div class="lab">고친 뒤에는 “AI에 저장”을 다시 눌러야 AI에 반영됩니다.</div></div>`;
     m.hidden = false;
     $('#gec').onclick = () => { m.hidden = true; };
-    $('#ges').onclick = () => { const v = $('#get').value.trim(); ST.guideEdit = ST.guideEdit || {}; if (v && v !== String(D.guides[k]).replace(/\*\*/g, '').trim()) ST.guideEdit[k] = v; else delete ST.guideEdit[k]; save(); m.hidden = true; toast('지침을 고쳤습니다'); redraw && redraw(); };
+    $('#ges').onclick = () => { const v = $('#get').value.trim(); ST.guideEdit = ST.guideEdit || {}; if (v && v !== String(D.guides[k]).replace(/\*\*/g, '').trim()) ST.guideEdit[k] = v; else delete ST.guideEdit[k]; if (ST.guideSaved) delete ST.guideSaved[k]; save(); m.hidden = true; toast('지침을 고쳤습니다'); redraw && redraw(); };
   });
-  $$('[data-gr]').forEach(b => b.onclick = () => { if (!confirm('고친 지침을 지우고 원래 지침으로 되돌릴까요?')) return; delete ST.guideEdit[b.dataset.gr]; save(); redraw && redraw(); });
+  $$('[data-gr]').forEach(b => b.onclick = () => { if (!confirm('고친 지침을 지우고 원래 지침으로 되돌릴까요?')) return; delete ST.guideEdit[b.dataset.gr]; if (ST.guideSaved) delete ST.guideSaved[b.dataset.gr]; save(); redraw && redraw(); });
 }
 function saveGuide(k) {
   copy(GUIDE_PRE + guideText(k));
@@ -660,7 +660,7 @@ function dayHTML(day, opts = {}) {
     const nxt = stepDay(day, 1, T);
     const sDays = sb.days, lastOfSub = sDays[sDays.length - 1] === day.id;
     const lastOfTp = lastOfSub && tp.subs[tp.subs.length - 1].id === sb.id;
-    let end = `<div class="dayend"><div class="rdline"><button class="readbtn ${isRead(day.id) ? 'on' : ''}" data-read="${day.id}">${icon('check')}<span>${dlabel(day)} ${isRead(day.id) ? '읽음' : '읽기 완료'}</span></button></div>
+    let end = `<div class="dayend"><div class="rdline"><button class="readbtn ${isRead(day.id) ? 'on' : ''}" data-read="${day.id}"><span class="cb"></span><span>${dlabel(day)} ${isRead(day.id) ? '읽음' : '읽기 완료'}</span></button></div><div class="rdhint">${isRead(day.id) ? '다시 누르면 취소' : '눌러서 표시하기'}</div>
       <div class="toclinks"><button data-go="#/toc/date?v=${day.vol}">‹ 일자별 목차</button><span>|</span><button data-go="#/toc/topic?v=${day.vol}">주제별 목차 ›</button></div>
       ${nxt ? `<button class="nextbtn" data-nextday="${nxt.id}">${T ? '다음 말씀 · ' + stepLabel(nxt, T) : dlabel(nxt)} ›</button>` : ''}`;
     if (lastOfSub) end += `<div class="unitend"><div class="ut">「${esc(sb.title)}」</div><div class="line">단원 끝</div></div>`;
@@ -829,7 +829,7 @@ function readPanel(day, topic, memo) {
 function bindFlow(fl, day, rerender) {
   fl.addEventListener('click', e => {
     const r = e.target.closest('[data-read]');
-    if (r) { const on = !isRead(r.dataset.read); setRead(r.dataset.read, on); r.classList.toggle('on', on); r.innerHTML = icon('check') + `<span>${dlabel(day)} ${on ? '읽음' : '읽기 완료'}</span>`; if (on) toast(`${dlabel(day)} 읽기를 표시했습니다.`); return; }
+    if (r) { const on = !isRead(r.dataset.read); setRead(r.dataset.read, on); r.classList.toggle('on', on); r.innerHTML = `<span class="cb"></span><span>${dlabel(day)} ${on ? '읽음' : '읽기 완료'}</span>`; const hn = r.closest('.dayend') && $('.rdhint', r.closest('.dayend')); if (hn) hn.textContent = on ? '다시 누르면 취소' : '눌러서 표시하기'; r.classList.remove('pop'); void r.offsetWidth; r.classList.add('pop'); return; }
     const nd = e.target.closest('[data-nextday]'); if (nd) { SLIDE = 'next'; go(`#/read/${nd.dataset.nextday}${fl._t || ''}`, true); return; }
     const mm = e.target.closest('.mm');
     if (mm) {

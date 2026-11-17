@@ -1042,3 +1042,27 @@ body[data-theme="clear"]{--in-ray:#ffffff}
 .gb[data-gs]{border-radius:8px}
 .gb.dark.done{background:#e6f2ea;border-color:#b9d9c3;color:#2f7a4c}
 .gb.dark.done svg.i{color:#2f7a4c}
+
+/* ===== 9차-14: 체크할 곳은 네모 칸 ===== */
+.cb{display:inline-block;flex:none;width:18px;height:18px;border:2px solid var(--tabon);border-radius:4px;background:#fff;position:relative;vertical-align:-3px}
+.on>.cb,.done>.cb,.cb.on{background:#3f8a55;border-color:#3f8a55}
+.on>.cb:after,.done>.cb:after,.cb.on:after{content:"";position:absolute;left:4.5px;top:1px;width:5px;height:9px;border:solid #fff;border-width:0 2.2px 2.2px 0;transform:rotate(45deg)}
+input[type=checkbox]{-webkit-appearance:none;appearance:none;width:20px;height:20px;border:2px solid var(--tabon);border-radius:4px;background:#fff;position:relative;flex:none;vertical-align:-4px;margin:0 6px 0 0;cursor:pointer}
+input[type=checkbox]:checked{background:#3f8a55;border-color:#3f8a55}
+input[type=checkbox]:checked:after{content:"";position:absolute;left:5px;top:1.5px;width:5px;height:10px;border:solid #fff;border-width:0 2.2px 2.2px 0;transform:rotate(45deg)}
+.introbox input[type=checkbox]{border-color:rgba(255,255,255,.7);background:transparent}
+.introbox input[type=checkbox]:checked{background:#3f8a55;border-color:#3f8a55}
+/* 읽기 완료 */
+.readbtn{border:1.5px solid var(--tabon);color:var(--tabon);background:#fff;gap:8px}
+.readbtn.on{border-color:#b9d9c3;background:#e6f2ea;color:#2f7a4c;box-shadow:none}
+.readbtn svg.i{display:none}
+.rdhint{text-align:center;font-family:var(--sans);font-size:11.5px;color:#8a7a68;margin-top:6px}
+.readbtn.pop .cb{animation:cbpop .22s ease-out}
+@keyframes cbpop{50%{transform:scale(1.25)}}
+/* 지침 저장 단추 */
+.gb.dark{background:var(--tabon);border-color:var(--tabon)}
+.gb.dark.done{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:#e6f2ea;border-color:#b9d9c3;color:#2f7a4c}
+/* 남색 단추도 배경색 따라 */
+.btn.dark{background:var(--tabon);border-color:var(--tabon)}
+/* 전문 보기·수정 글씨: 사용법만큼, 가가 연동 */
+.gfull,.gedit{font-size:calc(15px * var(--ui));line-height:1.75}

@@ -1,6 +1,6 @@
 'use strict';
 /* 365 복음 묵상 — 2차 앱 (개인용·배포용 공통 코드, 데이터만 다름) */
-const VERSION = '0.9.11';
+const VERSION = '0.9.12';
 const APPNAME = '365 복음 묵상';
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
@@ -273,7 +273,7 @@ function openOverlay(el, onClose) { // 판(메뉴·선택 판)을 열 때 뒤로
   if (!(history.state && history.state.ov)) history.pushState({ ov: 1 }, '', location.href);
 }
 function closeOverlay(silent) {
-  if (!OV) return; const o = OV; OV = null;
+  if (!OV) return; const o = OV; OV = null; ghostOut(o.el);
   o.el.hidden = true; if (o.onClose) o.onClose();
   if (history.state && history.state.ov) { OV_SKIP++; history.back(); }
 }
@@ -293,6 +293,12 @@ function backGuard() {
   });
 }
 
+function ghostOut(el) { // 닫히는 판: 복제본이 부드럽게 사라짐
+  if (!el || el.hidden || !el.innerHTML) return;
+  const g = el.cloneNode(true); g.removeAttribute('id'); g.classList.add('ghost'); g.style.pointerEvents = 'none';
+  const r = el.getBoundingClientRect(); Object.assign(g.style, { position: 'fixed', left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px', right: 'auto', bottom: 'auto', margin: 0 });
+  document.body.appendChild(g); setTimeout(() => g.remove(), 240);
+}
 /* ---------- 시작 화면 (인트로) ---------- */
 function bootDone() { // 휴대폰 첫 화면(남색) → 앱: 다른 색이 끼지 않게, 남색 막을 부드럽게 걷음
   const bt = document.getElementById('boot'); if (!bt) return;
@@ -873,7 +879,7 @@ document.addEventListener('touchcancel', () => { touching = false; }, { passive:
 function hasSel() { const s = getSelection(); return s && !s.isCollapsed && s.toString().trim().length > 0; }
 function sheetOpen() { return !$('#sheet').hidden; }
 function showSheet() { openOverlay($('#sheet'), sheetCleanup); $('#toast').hidden = true; }
-function sheetCleanup() { SH_POP = ''; const s = $('#sheet'); s.hidden = true; s.innerHTML = ''; s.classList.remove('dk', 'attop'); $$('h2.ph.sel').forEach(h => h.classList.remove('sel')); selInfo = null; selHeld = false; clearTimeout(holdT); try { CSS.highlights && CSS.highlights.delete('pick'); } catch (e) {} }
+function sheetCleanup() { ghostOut($('#sheet')); SH_POP = ''; const s = $('#sheet'); s.hidden = true; s.innerHTML = ''; s.classList.remove('dk', 'attop'); $$('h2.ph.sel').forEach(h => h.classList.remove('sel')); selInfo = null; selHeld = false; clearTimeout(holdT); try { CSS.highlights && CSS.highlights.delete('pick'); } catch (e) {} }
 function hideSheet() { if (OV && OV.el === $('#sheet')) closeOverlay(); else sheetCleanup(); }
 // 고른 뒤 잠시 그대로 두면 휴대폰 선택(과 휴대폰 메뉴)을 풀고 앱 색으로만 표시해 둠
 function holdSel() {
@@ -1977,14 +1983,14 @@ function downloadICS() {
 /* ---------- 처음 안내 (처음 설정 직후 · 설정에서 다시 보기) ---------- */
 const FIG = {
   read: `<div class="fgpage"><div class="fz l">‹ 앞쪽</div><div class="fz c">가운데 톡<br><small>읽는 방식·글자</small></div><div class="fz r">다음 쪽 ›</div></div>`,
-  mark: () => `<div class="fgverse"><span class="n">16</span>하나님이 세상을 <span class="hl">이처럼 사랑하사</span> 독생자를 주셨으니</div><div class="hrow mn"><span>${icon('hl')}<b class="u">U</b><b>B</b>${icon('pen')}${icon('copy')}${icon('share')}${icon('bm')}</span></div>`,
+  mark: () => `<div class="fgverse"><span class="n">16</span>하나님이 세상을 <span class="hl">이처럼 사랑하사</span> 독생자를 주셨으니</div><div class="hrow mn"><span>${icon('hl')}<b class="u">U</b><b>B</b>${icon('memo')}${icon('copy')}${icon('share')}</span></div>`,
   ai: () => `<div class="hrow mn"><span class="aiz">${icon('ask')}<br>AI와<br>간단 Q&amp;A</span><span class="aiz">${icon('gem')}<br>AI로<br>번역 비교</span><span class="aiz">${compassSVG()}<br>AI로 배경·<br>문맥 살피기</span></div>`,
 };
 function vTour() {
   const ai = ST.set.ai !== 'none';
   const cards = [
-    ['읽기', FIG.read, ['화면 양옆을 누르면 쪽을 넘깁니다.', '가운데를 톡 누르면 읽는 방식과 글자 크기 메뉴가 나옵니다.', '끝까지 넘기면 다음 날로 갑니다.']],
-    ['표시 · 메모', FIG.mark(), ['구절을 길게 누른 채 끌어서 고르고, 손을 떼면 아래에 메뉴가 뜹니다.', '형광펜·밑줄로 표시하고, 펜으로 메모를 씁니다.', '쓴 메모는 아래 메뉴 “메모”에 모입니다.']],
+    ['읽기', FIG.read, ['화면 양옆 끝을 누르면 쪽을 넘깁니다.', '가운데를 톡 누르면 읽는 방식과 글자 크기 메뉴가 나옵니다.', '끝까지 넘기면 다음 날로 갑니다.']],
+    ['표시 · 메모', FIG.mark(), ['구절을 길게 누른 채 끌어서 고르고, 손을 떼면 아래에 메뉴가 뜹니다.', '형광펜·밑줄로 표시하고, 메모 아이콘으로 메모를 씁니다.', '쓴 메모는 아래 메뉴 “메모”에 모입니다.']],
   ];
   if (ai) cards.push(['AI 활용', FIG.ai(), ['구절을 고른 뒤 AI와 간단 Q&A, AI로 번역 비교를 누릅니다.', '구절 표시 옆 나침반은 AI로 배경·문맥 살피기입니다.'], 'AI의 답은 참고 자료입니다. 최종 판단은 스스로 내리며 묵상하세요.']);
   let i = 0;
@@ -2015,19 +2021,19 @@ function vHelp() {
    <div class="body help">
     <button class="btn" data-go="#/tour">처음 안내 다시 보기 ›</button>
     ${tier('① 읽기')}
-    ${sec('첫 화면', '앱을 열면 [오늘의 말씀]이 켜져 있습니다. [일자별]과 [주제별]을 누르면 각각 최근 읽은 곳의 말씀이 뜨고, 카드 오른쪽 위 “목차”로 그 목차를 엽니다. “책 속으로”를 누르면 책 속에서 이어 읽습니다. 첫 화면은 말씀만 보이고, 맨 아래 가운데 화살표를 누르거나 위로 밀면 권별 진도와 아래 메뉴가 올라옵니다.', '<div class="hrow"><span class="pastef">일자별</span><span class="pastef">주제별</span></div><div class="hrow"><span class="pastef on" style="flex:1;text-align:center">오늘의 말씀</span></div>')}
-    ${sec('쪽 넘기기 · 다음 날', '화면 오른쪽을 누르거나 왼쪽으로 밀면 다음 쪽, 왼쪽을 누르거나 오른쪽으로 밀면 앞쪽입니다. 마지막 쪽에서 한 번 더 넘기면 다음 날로 갑니다. 주제별로 읽을 때는 같은 단원의 다음 말씀으로 가고, 날짜는 말씀 끝 오른쪽 아래에 작게 보입니다. 그날 끝에 “읽기 완료” 단추가 있습니다.', FIG.read)}
+    ${sec('첫 화면', '앱을 열면 [오늘의 말씀]이 켜져 있습니다. [일자별]과 [주제별]을 누르면 각각 최근 읽은 곳의 말씀이 뜨고, 켜진 단추 안의 “☰ 목차”로 그 목차를 엽니다. 카드 아래 “펼쳐 읽기 ›”를 누르면 책 속에서 이어 읽습니다. 아래 메뉴는 늘 보이고, 그 위 가운데 화살표를 누르거나 위로 밀면 권별 진도가 올라옵니다. 찾기는 오른쪽 위 돋보기입니다.', '<div class="hrow"><span class="pastef">일자별</span><span class="pastef">주제별</span></div><div class="hrow"><span class="pastef on" style="flex:1;text-align:center">오늘의 말씀</span></div>')}
+    ${sec('쪽 넘기기 · 다음 날', '화면 오른쪽 끝을 누르거나 왼쪽으로 밀면 다음 쪽, 왼쪽 끝을 누르거나 오른쪽으로 밀면 앞쪽입니다. 마지막 쪽에서 한 번 더 넘기면 다음 날로 갑니다. 주제별로 읽을 때는 같은 단원의 다음 말씀으로 가고, 날짜는 말씀 끝 오른쪽 아래에 작게 보입니다. 그날 끝에 “읽기 완료” 단추가 있습니다.', FIG.read)}
     ${sec('읽기 메뉴 (화면 가운데)', `책 속에서 화면 가운데를 짧게 톡 누르면 메뉴가 뜹니다. 읽는 방식 · 글자 크기 · 글꼴 · 간격 · 배경색 아이콘 가운데 하나를 누르면 그 설정만 펼쳐집니다. 목차는 그날 본문 끝(읽기 완료 아래)에 있습니다. 날짜·메뉴 같은 화면 글씨는 아래 메뉴의 ${gg}로 바꿉니다.`, '<div class="hrow"><span class="pastef">읽는 방식</span><span class="pastef on">가가</span><span class="pastef">글꼴</span><span class="pastef">간격</span><span class="pastef">배경색</span></div><div class="hrow"><span class="pastef">가 −</span><b>20</b><span class="pastef">가 +</span></div>')}
-    ${sec('뒤로 가기 · 아래 메뉴', `왼쪽 위 ${ic('back')}와 휴대폰 뒤로 가기는 바로 앞 화면으로 돌아갑니다. 첫 화면에서는 두 번 눌러야 앱이 닫힙니다. 아래 메뉴는 화면마다 조금 다르며 홈 · 메모 · 되새김 · 정렬 · 글자(가가) · 설정 아이콘이 있습니다. 찾기는 오른쪽 위 돋보기입니다. 책 속에서는 맨 위 [제n권 일자별 읽기]나 [제n권 주제별 읽기]를 누르면 그 홈으로, 집 아이콘을 누르면 홈으로 갑니다.`)}
+    ${sec('뒤로 가기 · 아래 메뉴', `왼쪽 위 ${ic('back')}와 휴대폰 뒤로 가기는 바로 앞 화면으로 돌아갑니다. 첫 화면에서는 두 번 눌러야 앱이 닫힙니다. 아래 메뉴는 어느 화면에서나 홈 · 메모 · 되새김 · 글자(가가) · 사용법 및 설정, 다섯 칸이 같은 자리에 있습니다. 메모와 되새김 화면에서는 자기 자리가 정렬로 바뀌고, 지금 있는 화면의 아이콘은 진하게 보입니다. 찾기는 오른쪽 위 돋보기입니다. 책 속에서는 맨 위 [제n권 일자별 읽기]나 [제n권 주제별 읽기]를 누르면 그 홈으로, 집 아이콘을 누르면 홈으로 갑니다.`)}
     ${tier('② 표시 · 메모')}
     ${sec('구절 고르기 · 표시', `구절을 길게 누르면 그 낱말이 골라지고, 손을 떼지 않고 그대로 끌면 원하는 데까지 넓어집니다. 손을 떼면 아래에 메뉴가 뜹니다. 휴대폰의 복사·검색 메뉴는 뜨지 않습니다. 한 절 전체는 메뉴 오른쪽 위 [구절 전체]로 고릅니다. 다시 고르려면 다시 길게 누르면 됩니다. 윗줄은 ${ic('hl')} 형광펜, <b>U</b> 밑줄, <b>B</b> 진하게, ${ic('er')} 삭제, 아랫줄은 ${ic('memo')} 메모, ${ic('copy')} 복사, ${ic('share')} 공유입니다. 서식은 눌러도 메뉴가 닫히지 않아 연달아 고를 수 있습니다. 일자별에서 하든 주제별에서 하든 같은 자리에 남습니다.`, FIG.mark())}
-    ${sec('메모', `아래 메뉴 “메모”에서 분류별로 보고 “새 메모”로 씁니다. 구절 메뉴의 ${ic('memo')} 메모로 쓰면 그 구절에 걸리고, 구절 끝에 ${ic('memo')} 메모 아이콘이 붙습니다. 쓰기 화면은 제목부터 도구 두 줄까지가 고정되어 있습니다. 윗줄은 대제목 · 소제목 · 정렬 · 들여쓰기 · 목록 · 인용 · 구분선, 아랫줄은 굵게 · 밑줄 · 형광펜 · 글꼴 · 서식 삭제 · 그림 삽입 · 실행 취소 · 재실행입니다. 인용은 커서가 있는 문단을 인용 칸으로 만들고, 한 번 더 누르면 풀립니다. 제목 칸 오른쪽 ${ic('eye')} 미리보기를 누르면 완성된 모습이 보입니다. 접을 부분을 드래그해 고르고 위의 “접기”를 누르면 고른 부분의 첫 줄이 제목이 되고 나머지가 그 아래에 접힙니다. “접기 해제”는 고른 곳의 접기를 풀어 원래 글로 돌려놓습니다. 저장은 오른쪽 위 ${ic('check')}입니다. AI 답에 “요약”과 “상세”가 있으면 무엇을 넣을지 묻고 자동으로 접어 둡니다. 안이 빈 접기는 저장할 때 지워집니다. 저장된 메모의 ${ic('pen')} 수정 · ${ic('x')} 삭제로 고치거나 지웁니다. 메모 머리의 ${ic('flag')} 대표 구절, ${ic('link')} 관련 구절을 누르면 그 본문으로 가고 “메모로 돌아가기 ›”로 돌아옵니다.`, `<div class="hrow"><span>${ic('flag')}<b>대표 구절 · 요 3:16</b></span></div><div class="hrow"><span>${ic('link')}관련 구절</span><span class="pastef">롬 5:8</span><span class="pastef">요일 4:10</span></div>`)}
+    ${sec('메모', `아래 메뉴 “메모”에서 분류별로 보고 “새 메모”로 씁니다. 구절 메뉴의 ${ic('memo')} 메모로 쓰면 그 구절에 걸리고, 구절 끝에 ${ic('memo')} 메모 아이콘이 붙습니다. 쓰기 화면은 제목부터 도구 두 줄까지가 고정되어 있습니다. 윗줄은 대제목 · 소제목 · 정렬 · 들여쓰기 · 목록 · 인용 · 구분선, 아랫줄은 굵게 · 밑줄 · 형광펜 · 글꼴 · 서식 삭제 · 그림 삽입 · 실행 취소 · 재실행입니다. 인용은 커서가 있는 문단을 인용 칸으로 만들고, 한 번 더 누르면 풀립니다. 제목 칸 오른쪽 ${ic('eye')} 미리보기를 누르면 완성된 모습이 보입니다. 접을 부분을 드래그해 고르고 위의 “접기”를 누르면 고른 부분의 첫 줄이 제목이 되고 나머지가 그 아래에 접힙니다. “접기 해제”는 고른 곳의 접기를 풀어 원래 글로 돌려놓습니다. 저장은 오른쪽 위 ${ic('check')}입니다. 저장된 메모에서 글을 끌어 고르면 서식 메뉴가 뜨고, 고른 글에 부분 메모도 붙일 수 있습니다. 메모에 표나 그림을 넣은 경우, 표는 카드로 접어 볼 수 있고 그림은 누르면 크게 보이며 두 손가락으로 확대할 수 있습니다. AI 답에 “요약”과 “상세”가 있으면 무엇을 넣을지 묻고 자동으로 접어 둡니다. 안이 빈 접기는 저장할 때 지워집니다. 저장된 메모의 ${ic('pen')} 수정 · ${ic('x')} 삭제로 고치거나 지웁니다. 메모 머리의 ${ic('flag')} 대표 구절, ${ic('link')} 관련 구절을 누르면 그 본문으로 가고 “메모로 돌아가기 ›”로 돌아옵니다.`, `<div class="hrow"><span>${ic('flag')}<b>대표 구절 · 요 3:16</b></span></div><div class="hrow"><span>${ic('link')}관련 구절</span><span class="pastef">롬 5:8</span><span class="pastef">요일 4:10</span></div>`)}
     ${sec('되새김 · 찾기', `${ic('bmk')} 되새김에는 형광펜 · 밑줄 · 진하게로 표시한 말씀이 모두 모입니다. 아래 메뉴의 정렬에서 성경 순서 · 책 순서 · 최신 순을 고르고, 오른쪽 위에서 권을 고릅니다. 오른쪽 위 ${ic('search')} 찾기에서 구절(예: 요 3:16)이나 낱말을 찾고, 범위를 전체 · 본문 · 메모 중에서 고릅니다. 결과는 본문과 메모로 나뉘어 보입니다.`, '<div class="hrow"><span class="pastef on">전체</span><span class="pastef">본문</span><span class="pastef">메모</span></div>')}
-    ${ai ? tier('③ AI 활용') + sec('AI 활용 아이콘 세 가지', `구절을 고른 뒤 ${ic('ask')} AI와 간단 Q&A, ${ic('gem')} AI로 번역 비교를 누릅니다. 구절 표시 옆 ${ic('cmp')} 나침반은 AI로 배경·문맥 살피기입니다. 누르면 잠시 “붙여넣으세요” 안내가 뜬 뒤 연결한 AI 창이 열립니다. 구절과 요청은 이미 복사되어 있으니, Claude·Gemini는 입력칸을 길게 눌러 붙여넣기 한 뒤 보내면 됩니다. ChatGPT는 입력칸에 채워진 채 열리니 보내기만 누르면 됩니다. 본문 아래 펼친 개역한글 줄도 길게 눌러 고르면 AI에게 물을 수 있습니다. 최종 판단은 스스로 내리며 묵상하세요.`, FIG.ai()) + sec('AI 지침', '설정 › AI 활용에서 세 지침을 “AI에 저장”해 두어야 AI가 짧은 요청만으로 지침대로 답합니다. 지침은 “전문 보기”로 읽고 “고치기”로 바꿀 수 있습니다. 붙여 넣을 때 AI가 “외부 지시문일 수 있다”는 안내를 띄울 수 있는데, 이 앱의 성경 읽기 지침이니 읽어 보고 보내시면 됩니다. 연결할 AI를 바꾸면 새 AI에 지침을 다시 저장해 주세요.') : ''}
+    ${ai ? tier('③ AI 활용') + sec('AI 활용 아이콘 세 가지', `구절을 고른 뒤 ${ic('ask')} AI와 간단 Q&A, ${ic('gem')} AI로 번역 비교를 누릅니다. 구절 표시 옆 ${ic('cmp')} 나침반은 AI로 배경·문맥 살피기입니다. 누르면 잠시 “붙여넣으세요” 안내가 뜬 뒤 연결한 AI 창이 열립니다. 구절과 요청은 이미 복사되어 있으니, Claude·Gemini는 입력칸을 길게 눌러 붙여넣기 한 뒤 보내면 됩니다. ChatGPT는 입력칸에 채워진 채 열리니 보내기만 누르면 됩니다. 본문 아래 펼친 개역한글 줄도 길게 눌러 고르면 AI에게 물을 수 있습니다. 최종 판단은 스스로 내리며 묵상하세요.`, FIG.ai()) + sec('AI 지침', '사용법 및 설정 › AI 활용에서 세 지침을 “AI에 저장”해 두어야 AI가 짧은 요청만으로 지침대로 답합니다. 지침은 “전문 보기”로 읽고 “수정”으로 바꿀 수 있습니다. 저장한 지침은 단추가 “✓ 저장 완료”로 바뀌고, 다시 누르면 새로 저장합니다. 붙여 넣을 때 AI가 “외부 지시문일 수 있다”는 안내를 띄울 수 있는데, 이 앱의 성경 읽기 지침이니 읽어 보고 보내시면 됩니다. 연결할 AI를 바꾸면 새 AI에 지침을 다시 저장해 주세요.') : ''}
     ${tier('더 알아두기')}
-    ${sec('다른 번역 보기', `구절 표시 옆 ${ic('dual', 'on')}를 누르면 그 본문 아래에만 번역 줄이 나타납니다. 개역한글(⌄)은 앱 안에서 각 구절 아래에 바로 보이고, ↗는 YouVersion(성경 앱)에서 그 본문을 엽니다. 구절 메뉴 맨 위 상자의 개역한글도 메뉴 안에 바로 펼쳐집니다.`, `<div class="hrow ph"><b>창세기 6:5~7</b><span>${ai ? ic('cmp') : ''}${ic('dual', 'on')}</span></div><div class="hrow dvl"><span>개역한글 ⌄</span><span>·</span><span>ESV ↗</span><span>|</span><span>새번역 ↗</span><span>·</span><span>NIV ↗</span></div>`)}
+    ${sec('다른 번역 보기', `구절 표시 옆 ${ic('dual', 'on')}를 누르면 그 본문 아래에만 번역 줄이 나타납니다. 개역한글(⌄)은 앱 안에서 각 구절 아래에 바로 보이고, ↗는 YouVersion(성경 앱)에서 그 본문을 엽니다. 펼친 개역한글 줄을 길게 눌러 고르면 AI와 간단 Q&A · AI로 번역 비교 · 복사 · 메모 메뉴가 뜹니다.`, `<div class="hrow ph"><b>창세기 6:5~7</b><span>${ai ? ic('cmp') : ''}${ic('dual', 'on')}</span></div><div class="hrow dvl"><span>개역한글 ⌄</span><span>·</span><span>ESV ↗</span><span>|</span><span>새번역 ↗</span><span>·</span><span>NIV ↗</span></div>`)}
     ${sec('더 깊고 넓게 읽기', '어떤 날은 본문 끝에 “더 깊고 넓게 읽기” 칸이 있습니다. 누르면 그날 말씀과 이어지는 긴 본문이 펼쳐집니다. 읽기 완료와는 따로입니다.', `<div class="hrow deepf"><span>더 깊고 넓게 읽기 · 창 7</span><span>⌄</span></div>`)}
-    ${sec('매일 알림 · 백업', `설정 › 매일 알림에서 캘린더에 "${NOTIFY_TITLE}" 반복 일정을 넣습니다. 알림의 링크를 누르면 그날 말씀으로 바로 갑니다. 기록은 이 휴대폰 안에만 있으니 설정 › 메모·기록에서 백업 파일을 내보내 보관해 두세요.`)}
+    ${sec('매일 알림 · 백업', `사용법 및 설정 › 매일 알림에서 캘린더에 "${NOTIFY_TITLE}" 반복 일정을 넣습니다. 알림의 링크를 누르면 그날 말씀으로 바로 갑니다. 기록은 이 휴대폰 안에만 있으니 사용법 및 설정 › 메모·기록에서 백업 파일을 내보내 보관해 두세요.`)}
     ${sec('구글 검색 막대가 메뉴를 가릴 때', '구절을 고를 때 화면 아래에 구글 검색 막대(“탭하여 검색”)가 먼저 뜨면, 크롬에서 그 기능을 끄면 됩니다. 크롬 버전에 따라 위치가 조금 다르고, Google 서비스에 없으면 “개인정보 보호 및 보안” 아래쪽에 있습니다.', `<div class="hrow path">크롬 ⋮ › 설정 › Google 서비스 › <b>탭하여 검색</b> 끄기</div>`)}
    </div></div>`;
   const sync = () => $$('.help .hs').forEach(x => { const o = x.classList.contains('open'); $('.fx', x).innerHTML = icon(o ? 'collapse' : 'expand'); });

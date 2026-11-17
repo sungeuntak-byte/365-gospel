@@ -1023,3 +1023,22 @@ body[data-theme="clear"]{--in-ray:#ffffff}
 .hdrawer{transform:translateY(calc(100% - 30px))}
 .hdin{padding-bottom:10px}
 .uipop .uih{text-align:center}
+
+/* ===== 9차-13: 부드러운 전환 ===== */
+@keyframes scrin{from{opacity:0}to{opacity:1}}
+@keyframes sheetup{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+@keyframes sheetdown{to{transform:translateY(24px);opacity:0}}
+@keyframes popin{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}
+@keyframes popout{to{transform:scale(.96);opacity:0}}
+#app>*{animation:scrin .2s ease-out}
+#app>.reader.sl-next,#app>.reader.sl-prev{animation:none}
+.sheet:not([hidden]),.rpanel:not([hidden]){animation:sheetup .22s cubic-bezier(.22,.7,.25,1)}
+.uipop:not([hidden]){animation:popin .16s ease-out;transform-origin:bottom center}
+.modal:not([hidden]){animation:scrin .18s ease-out}
+.modal:not([hidden])>.card{animation:popin .2s ease-out}
+.sheet.ghost,.rpanel.ghost{animation:sheetdown .2s ease-in forwards;z-index:30}
+.uipop.ghost{animation:popout .16s ease-in forwards;z-index:30}
+/* 지침 단추: 둥근(보기·수정) / 사각(저장) */
+.gb[data-gs]{border-radius:8px}
+.gb.dark.done{background:#e6f2ea;border-color:#b9d9c3;color:#2f7a4c}
+.gb.dark.done svg.i{color:#2f7a4c}

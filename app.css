@@ -933,3 +933,46 @@ body[data-theme="clear"]{--in-ray:#ffffff}
 .nav .gg{height:24px}.nav .gg .a{font-size:13.2px}.nav .gg .b{font-size:19.8px}
 .nav .mgo{font-size:16.5px}
 .body{padding-bottom:calc(94px + var(--safe-b))}
+
+/* ===== 9차-9 ===== */
+/* 아래 메뉴: 같은 칸·같은 높이, 더 위로, 홈은 양 끝으로 */
+.nav,.hdin .nav{padding-top:8px;padding-bottom:calc(22px + var(--safe-b))}
+.nav.ic button{height:44px;padding:0;display:flex;align-items:center;justify-content:center;flex:0 0 52px;min-width:52px}
+.nav.ic .gg{height:auto;align-items:center}
+.nav.ic.c-home{justify-content:space-between;padding-left:10px;padding-right:10px}
+.body{padding-bottom:calc(104px + var(--safe-b))}
+/* 본문의 메모 아이콘: 구절 끝, 넓게 눌림 */
+.mm{display:inline-flex;align-items:center;justify-content:center;vertical-align:-.1em;margin-left:2px;padding:6px 8px;margin-top:-6px;margin-bottom:-6px;color:var(--copper);line-height:0}
+.mm svg.i{width:.95em;height:.95em}
+/* 진도표 범례: 위 줄 */
+.plg{display:flex;gap:10px;align-items:center}
+/* 접기 표시: 꺾쇠 두 개 + 글자, 체크 없음 */
+.memo .mbody h3.fold:after{content:none}
+.memo .mbody h3.fold.done:before{content:none}
+.mbody h3.fold .fx{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;gap:2px;font-family:var(--sans);font-size:12px;font-weight:600;color:#8a7a68}
+.mbody h3.fold .fx svg.i{width:16px;height:16px}
+.mbody h3.fold{position:relative;padding-right:78px!important}
+/* 쓰기 화면: 고정 머리 + 아이콘 도구 */
+.edit .efix{position:sticky;z-index:4;background:var(--page);margin:-6px -16px 0;padding:6px 16px 6px;border-bottom:2px solid #dbd3c6;display:flex;flex-direction:column;gap:6px}
+.ettl{gap:6px;flex-wrap:nowrap}.ettl .ttl{flex:1}
+.pvb{flex:none;width:42px;height:40px;border:1px solid var(--line);border-radius:9px;display:flex;align-items:center;justify-content:center;background:#fff;color:var(--navy)}
+.pvb svg.i{width:22px;height:22px}
+.etb{display:flex;flex-direction:column;gap:2px}
+.etb .er{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:1px}
+.etb button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:3px 0;border-radius:7px;color:var(--navy)}
+.etb button:active{background:var(--sand-bg)}
+.etb .ei{height:22px;display:flex;align-items:center;justify-content:center}
+.etb .ei svg.i{width:21px;height:21px}
+.etb small{font-size:10px;color:#6b7480;white-space:nowrap;letter-spacing:-.02em}
+.etb .tg{font-family:var(--sans);font-size:18px;line-height:1;color:var(--navy)}
+.hg2{display:block;width:20px;height:16px;border-top:2.5px solid var(--navy);background:repeating-linear-gradient(#0000 0 3.5px,#b9bfc7 3.5px 5px)}
+.hg2.big{border-top-width:5px}
+.pvbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pvbar button{display:inline-flex;align-items:center;gap:4px;padding:7px 10px;border-radius:9px;background:var(--taboffbg);color:var(--tabofffg);font-size:13px;font-weight:700}
+.pvbar button svg.i{width:17px;height:17px}
+.mbody.ed .ind,.memo .mbody .ind{padding-left:1.5em}
+.mbody.ed.pv{-webkit-user-select:text;user-select:text;border-style:solid;background:#fff}
+.mbody.ed.pv h3.fold{border:1px solid #e3d6c3;border-style:solid;border-radius:9px;padding:8px 12px;background:#fff;cursor:pointer}
+.mbody.ed.pv h3.fold:before{content:none}
+.mbody hr{border:0;border-top:1px solid #d9d1c4;margin:1em 0}
+.mbody img{max-width:100%;height:auto}

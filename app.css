@@ -1010,3 +1010,7 @@ body[data-theme="clear"]{--in-ray:#ffffff}
 .edit .efix .etb{margin:0 -12px}
 .etb .er{gap:0}
 .etb small{font-size:11px;letter-spacing:-.06em}
+
+/* ===== 9차-11: 시작 깜박임 없애기 ===== */
+.introbox{transition:background-color .5s ease}
+.introbox .in-wrap{transition:opacity .7s ease .1s,transform .7s ease .1s}

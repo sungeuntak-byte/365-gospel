@@ -1,6 +1,6 @@
 'use strict';
 /* 365 복음 묵상 — 2차 앱 (개인용·배포용 공통 코드, 데이터만 다름) */
-const VERSION = '0.9.9';
+const VERSION = '0.9.10';
 const APPNAME = '365 복음 묵상';
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
@@ -131,11 +131,13 @@ async function boot() {
     const fromNotify = /[?&]n=1/.test(location.hash);
     route();
     if ((!ST.set.setupDone || ST.set.intro) && !fromNotify && !introRecent()) showIntro(); // 처음 열 때도 로마서 화면부터
+    bootDone();
     packCheck(); setTimeout(backupNag, 2500);
     newYearCheck();
     if (ST.set.setupDone && ST.seenVer !== VERSION) { const n = Object.values(D.extra).reduce((a, x) => a + x.length, 0); if (ST.seenVer && n) setTimeout(() => toast(`새로 더해진 말씀이 있습니다 · 더 깊고 넓게 읽기 ${n}곳`, 4200), 1500); ST.seenVer = VERSION; save(); }
     if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
   } catch (e) {
+    bootDone();
     $('#app').innerHTML = `<div class="body"><div class="empty">앱 자료를 불러오지 못했습니다.<br>인터넷에 연결된 상태에서 한 번 다시 열어 주세요.<br><small>${esc(e.message)}</small></div></div>`;
   }
 }
@@ -286,6 +288,12 @@ function backGuard() {
 }
 
 /* ---------- 시작 화면 (인트로) ---------- */
+function bootDone() { // 휴대폰 첫 화면(남색) → 앱: 다른 색이 끼지 않게, 남색 막을 부드럽게 걷음
+  const bt = document.getElementById('boot'); if (!bt) return;
+  const intro = !$('#introbox').hidden;
+  requestAnimationFrame(() => { bt.classList.add('out'); setTimeout(() => bt.remove(), intro ? 50 : 450); });
+  if (intro) bt.style.transition = 'none';
+}
 function introRecent() { try { return Date.now() - (+sessionStorage.getItem('m365-intro') || 0) < 5 * 60e3; } catch (e) { return false; } }
 function showIntro() {
   const b = $('#introbox');

@@ -1014,3 +1014,12 @@ body[data-theme="clear"]{--in-ray:#ffffff}
 /* ===== 9차-11: 시작 깜박임 없애기 ===== */
 .introbox{transition:background-color .5s ease}
 .introbox .in-wrap{transition:opacity .7s ease .1s,transform .7s ease .1s}
+
+/* ===== 9차-12: 아래 메뉴 다섯 칸 고정 ===== */
+.nav.ic.n5,.nav.ic.c-home{justify-content:space-around;padding-left:4px;padding-right:4px}
+.nav.ic button{color:#8a9099}
+.nav.ic button.on{color:var(--navy)}
+.homes>.nav{position:fixed;left:0;right:0;bottom:0;z-index:13;border-top:1px solid var(--line);background:#fff}
+.hdrawer{transform:translateY(calc(100% - 30px))}
+.hdin{padding-bottom:10px}
+.uipop .uih{text-align:center}

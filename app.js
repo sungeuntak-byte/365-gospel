@@ -1,6 +1,6 @@
 'use strict';
 /* 365 복음 묵상 — 2차 앱 (개인용·배포용 공통 코드, 데이터만 다름) */
-const VERSION = '0.9.10';
+const VERSION = '0.9.11';
 const APPNAME = '365 복음 묵상';
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
@@ -209,15 +209,17 @@ function nav(on, opts = {}) {
   const sort = `<button data-act="sort" aria-label="정렬">${icon('sort')}</button>`;
   const ui = `<button data-act="ui" class="navui" aria-label="화면 글자 크기"><span class="gg"><span class="a">가</span><span class="b">가</span></span></button>`;
   const set = `<button class="${on === 'set' ? 'on' : ''} ${backupDue() ? 'dot' : ''}" data-nav="#/set" aria-label="사용법 및 설정">${icon('gearbook')}</button>`;
-  const it = (ctx === 'home' ? [memo, col, ui, set] : ctx === 'memo' ? [home, col, opts.sort ? sort : '', ui, set] : ctx === 'col' ? [home, memo, sort, ui, set] : [home, memo, col, ui, set]).filter(Boolean);
-  return `<nav class="nav ic n${it.length} c-${ctx}">${it.join('')}</nav>`;
+  // 다섯 칸 고정: 홈 · 메모 · 되새김 · 가가 · 설정 (메모·되새김 화면에서는 자기 자리가 정렬)
+  const it = [ctx === 'home' ? home.replace('class="', 'class="on ') : home, ctx === 'memo' ? (opts.sort ? sort : memo.replace('class="', 'class="on ')) : memo, ctx === 'col' ? sort : col, ui, set];
+  return `<nav class="nav ic n5 c-${ctx}">${it.join('')}</nav>`;
 }
+function navAbove(p) { const nv = $('.nav'); p.style.bottom = nv ? (innerHeight - nv.getBoundingClientRect().top + 8) + 'px' : ''; }
 function sortPicker(btn) { // 정렬 고르기 (메모: 구절·날짜 / 모아 보기: 본문·최근)
   const p = $('#uipop'), memo = /^#\/memos/.test(location.hash);
   if (!p.hidden) { closeOverlay(); return; }
   const cur = memo ? (ST.set.msort || 'verse') : colSort;
   const opts = memo ? [['verse', '구절 순서'], ['date', '최신 순']] : [['bible', '성경 순서'], ['text', '책 순서'], ['recent', '최신 순']];
-  p.classList.add('fromnav');
+  p.classList.add('fromnav'); navAbove(p);
   p.innerHTML = `<div class="lab">정렬</div>${opts.map(([v, t]) => `<button class="srow ${v === cur ? 'on' : ''}" data-sv="${v}">${t}</button>`).join('')}`;
   openOverlay(p);
   $$('[data-sv]', p).forEach(b => b.onclick = () => { if (memo) { ST.set.msort = b.dataset.sv; save(); } else colSort = b.dataset.sv; closeOverlay(); setTimeout(route, 30); });
@@ -252,8 +254,8 @@ function goBack() { if (history.state && history.state.base) go('#/'); else hist
 function uiPicker(btn) {
   const p = $('#uipop');
   if (!p.hidden) { closeOverlay(); return; }
-  p.classList.toggle('fromnav', btn.classList.contains('navui'));
-  const draw = () => { p.innerHTML = `<div class="uih">화면 글자 크기</div><div class="ustep"><button data-us="-1" aria-label="작게" ${ST.set.ui <= 0 ? 'disabled' : ''}>−</button><b>${UI_STEPS[ST.set.ui][1]}</b><button data-us="1" aria-label="크게" ${ST.set.ui >= UI_STEPS.length - 1 ? 'disabled' : ''}>+</button></div><div class="lab">본문 글자는 책 속에서 화면 가운데를 눌러 바꾸세요</div>`;
+  p.classList.toggle('fromnav', btn.classList.contains('navui')); if (btn.classList.contains('navui')) navAbove(p); else p.style.bottom = '';
+  const draw = () => { p.innerHTML = `<div class="uih">화면 글자 크기</div><div class="ustep"><button data-us="-1" aria-label="작게" ${ST.set.ui <= 0 ? 'disabled' : ''}>−</button><b>${UI_STEPS[ST.set.ui][1]}</b><button data-us="1" aria-label="크게" ${ST.set.ui >= UI_STEPS.length - 1 ? 'disabled' : ''}>+</button></div>`;
     $$('[data-us]', p).forEach(x => x.onclick = () => { ST.set.ui = Math.max(0, Math.min(UI_STEPS.length - 1, ST.set.ui + +x.dataset.us)); save(); applyView(); draw(); }); };
   draw();
   openOverlay(p);
@@ -261,6 +263,10 @@ function uiPicker(btn) {
 
 /* ---------- 뒤로 가기: 한 단계씩, 판은 먼저 닫고, 홈에서는 두 번 눌러야 닫힘 ---------- */
 let lastBack = 0, OV = null, OV_SKIP = 0, LEAVE_GUARD = null;
+document.addEventListener('pointerdown', e => { // 판 바깥을 누르면 닫힘 (여는 단추는 스스로 열고 닫음)
+  if (!OV || OV.el.id !== 'uipop' || OV.el.contains(e.target) || e.target.closest('[data-act="ui"],[data-act="sort"],[data-cmd="font"]')) return;
+  closeOverlay();
+}, true);
 function openOverlay(el, onClose) { // 판(메뉴·선택 판)을 열 때 뒤로 가기 한 칸을 끼워 둠
   if (OV && OV.el !== el) closeOverlay(true);
   el.hidden = false; OV = { el, onClose };
@@ -394,8 +400,9 @@ async function vHome() {
       <div class="htabs" id="ht">${[['date', '일자별'], ['topic', '주제별']].map(([v, t]) => `<button data-v="${v}" class="${tab === v ? 'on' : ''}">${tab === v ? `<span class="tgrp"><span>${t}</span><i class="tsep"></i><span class="ttoc" data-toc="${v}">${icon('toc')}<span class="tt">목차</span></span></span>` : t}</button>`).join('')}<button data-v="today" class="wide ${tab === 'today' ? 'on' : ''}">오늘의 말씀</button></div>
       ${main}
     </div>
-    <div class="hdrawer" id="hd"><button class="handle" id="hh" aria-label="진도와 메뉴 펼치기"><svg class="chev" viewBox="0 0 24 12"><path d="M5 9l7-6 7 6"/></svg><i></i></button><div class="hdin">${vols}${nav('home', { ctx: 'home' })}</div></div></div>`;
+    <div class="hdrawer" id="hd"><button class="handle" id="hh" aria-label="진도와 메뉴 펼치기"><svg class="chev" viewBox="0 0 24 12"><path d="M5 9l7-6 7 6"/></svg><i></i></button><div class="hdin">${vols}</div></div>${nav('home', { ctx: 'home' })}</div>`;
   $('#ht').onclick = e => { const tc = e.target.closest('[data-toc]'); if (tc) { go(`#/toc/${tc.dataset.toc}`); return; } const b = e.target.closest('button'); if (!b || b.dataset.v === tab) return; ST.set.home = b.dataset.v; save(); vHome(); };
+  { const nv = $('.homes > .nav'), h = nv ? nv.getBoundingClientRect().height : 0; $('#hd').style.bottom = h + 'px'; const bd = $('.homes .body.home'); if (bd) bd.style.paddingBottom = (h + 34) + 'px'; }
   const hd = $('#hd'), tog = open => { hd.classList.toggle('open', open); $('#hh').setAttribute('aria-label', open ? '접기' : '진도와 메뉴 펼치기'); };
   $('#hh').onclick = () => tog(!hd.classList.contains('open'));
   let sy = null; $('#hh').addEventListener('touchstart', e => { sy = e.touches[0].clientY; }, { passive: true });
@@ -892,7 +899,7 @@ function keepVisible(rect) { // 고른 글이 메뉴에 가리지 않게: 위쪽
 let ovJustClosed = 0;
 function onDocDown(e) {
   if (sheetOpen() && !e.target.closest('#sheet')) { hideSheet(); ovJustClosed = Date.now(); }
-  if (OV && (OV.el.id === 'rpanel' || OV.el.id === 'uipop') && !OV.el.contains(e.target) && !e.target.closest('[data-act=ui]')) { closeOverlay(); ovJustClosed = Date.now(); }
+  if (OV && (OV.el.id === 'rpanel' || OV.el.id === 'uipop') && !OV.el.contains(e.target) && !e.target.closest('[data-act=ui],[data-act=sort],[data-cmd=font]')) { closeOverlay(); ovJustClosed = Date.now(); }
   if (MM_HELD && !e.target.closest('#mmenu')) hideMemoMenu();
 }
 function offsetIn(t, node, off) { const r = document.createRange(); r.setStart(t, 0); r.setEnd(node, off); return r.toString().length; }

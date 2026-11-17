@@ -926,3 +926,10 @@ body[data-theme="clear"]{--in-ray:#ffffff}
 .introbox{transition:background-color .3s ease}
 .introbox.from{background:#192c46;transition:none}
 .introbox .in-wrap{transition:opacity .6s ease .15s,transform .6s ease .15s}
+
+/* ===== 9차-8: 아래 메뉴 위로 8px, 아이콘 10% 크게 ===== */
+.nav,.hdin .nav{padding-bottom:calc(14px + var(--safe-b))}
+.nav.ic svg.i{width:26.4px;height:26.4px}
+.nav .gg{height:24px}.nav .gg .a{font-size:13.2px}.nav .gg .b{font-size:19.8px}
+.nav .mgo{font-size:16.5px}
+.body{padding-bottom:calc(94px + var(--safe-b))}

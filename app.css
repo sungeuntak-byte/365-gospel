@@ -1191,3 +1191,16 @@ html.mpage .body.memo{padding-bottom:100vh}
 .modal .card.ask b{font-size:16px}
 .modal .card.ask .field{font-size:16px}
 .verno{color:var(--faint);font-size:12px}
+
+/* ===== 9차-23: 메모 정리 — 목록·가운데 줄·작은 제목·안내 상자·표 접기 ===== */
+.memo .mbody p.li{text-indent:-1em;padding-left:1em;margin:.25em 0 .35em;text-align:justify}
+.memo .mbody p.cline{text-align:center!important;text-align-last:center;text-indent:0;margin:.1em 0;word-break:keep-all}
+.memo .mbody p.cline+p:not(.cline){margin-top:.9em}
+.memo .mbody h4{font-size:1em;margin:.9em 0 .3em}
+.memo .mbody h3+h4{margin-top:.4em}
+.memo .mbody .mnote{background:var(--sand-bg,#f3ece1);border-radius:8px;padding:8px 11px;margin:.6em 0;font-size:.92em;line-height:1.7;text-indent:0}
+.memo .mbody .mnote p{text-indent:0;margin:.2em 0}
+.memo .mbody .tfolds .tcell{line-height:1.75}
+.memo .mbody .tfolds .tcell p{text-indent:0;margin:.15em 0}
+.memo .mbody .tfolds .tcell .vq,.memo .mbody .tfolds .tcell div.vq{font-size:.95em;color:#5d5850;margin:.3em 0 .2em;padding-left:.6em;border-left:2px solid #e3d6c3}
+.memo .mbody p.memo-sub+p.memo-sub{margin-top:-.5em}

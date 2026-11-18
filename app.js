@@ -1,6 +1,6 @@
 'use strict';
 /* 365 복음 묵상 — 2차 앱 (개인용·배포용 공통 코드, 데이터만 다름) */
-const VERSION = '0.9.21';
+const VERSION = '0.9.22';
 const APPNAME = '365 복음 묵상';
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
@@ -1406,13 +1406,17 @@ function shortAt(a) { const d = D.days[a.day], p = d.p[findPidIdx(a.day, a.v) - 
 /* ---------- 메모 화면 보강: 표 → 행별 카드, 사진 확대 보기, 가운데 톡 → 읽기 메뉴 ---------- */
 function memoEnhance(m) {
   const mb = $('#mb'); if (!mb) return;
-  $$('table', mb).forEach(tb => {
+  $$('table', mb).forEach(tb => { // 표 → 접기 상자 (머리 칸은 이름표로), 칸 하나짜리 표는 안내 상자
     if (tb.dataset.carded || tb.closest('.gen')) return;
-    const rows = Array.from(tb.rows); if (rows.length < 2) return;
-    const head = Array.from(rows[0].cells).map(c => c.textContent.trim()); if (head.length < 3) return;
-    const box = document.createElement('div'); box.className = 'tcards gen';
-    box.innerHTML = rows.slice(1).map(r => { const c = Array.from(r.cells); if (!c.length) return ''; return `<details class="tcard"><summary><b>${c[0].innerHTML}</b>${c[1] && head.length > 3 ? `<span>${c[1].innerHTML}</span>` : ''}</summary><dl>${c.slice(head.length > 3 ? 2 : 1).map((x, k) => `<dt>${esc(head[(head.length > 3 ? 2 : 1) + k] || '')}</dt><dd>${x.innerHTML}</dd>`).join('')}</dl></details>`; }).join('');
-    tb.before(box); tb.hidden = true; tb.dataset.carded = '1';
+    const rows = Array.from(tb.rows); if (!rows.length) return;
+    if (rows.length === 1 && rows[0].cells.length === 1) { const d = document.createElement('div'); d.className = 'mnote gen'; d.innerHTML = rows[0].cells[0].innerHTML; tb.before(d); tb.hidden = true; tb.dataset.carded = '1'; return; }
+    const hc = Array.from(rows[0].cells); if (rows.length < 2 || hc.length < 2) return;
+    const lab = c => { const ps = $$('p', c); return ps.length > 1 ? [ps[0].textContent.trim(), ps.slice(1).map(x => x.textContent.trim()).join(' ')] : [c.textContent.trim(), '']; };
+    const heads = hc.map(lab); let h = '';
+    if (heads[0][0] && heads[0][0] !== '구분') h += `<p class="mlabel">${esc(heads[0][0])}</p>`;
+    if (heads.slice(1).some(x => x[1])) h += `<div class="mnote">${heads.slice(1).map(x => `<b>${esc(x[0])}</b>${x[1] ? ' — ' + esc(x[1]) : ''}`).join('<br>')}</div>`;
+    h += rows.slice(1).map(r => { const c = Array.from(r.cells); if (!c.length) return ''; return `<div class="fbox"><h3 class="fold">${esc(c[0].textContent.replace(/\s+/g, ' ').trim())}</h3><div class="fbody">${c.slice(1).map((x, k) => `${heads[k + 1] && heads[k + 1][0] ? `<p class="mlabel">${esc(heads[k + 1][0])}</p>` : ''}<div class="tcell">${x.innerHTML}</div>`).join('')}</div></div>`; }).join('');
+    const box = document.createElement('div'); box.className = 'tfolds gen'; box.innerHTML = h; tb.before(box); tb.hidden = true; tb.dataset.carded = '1';
   });
   applyFolds(m);
   $$('img', mb).forEach(img => { img.onclick = e => { e.stopPropagation(); imgView(img.src); }; img.oncontextmenu = e => e.preventDefault(); });
@@ -2030,6 +2034,7 @@ function packAsk(isNew) {
 }
 async function packCheck() { // 한 번 연 휴대폰에서만: 새 묶음이 올라오면 저절로 넣기
   if (!ST.pm) return;
+  try { const r = await fetch('data/n.ver', { cache: 'no-store' }); if (r.ok) { const v = (await r.text()).trim(); if (v && v === String(ST.pm.ver)) return; } } catch (e) { return; } // 작은 표만 먼저 보고, 바뀌었을 때만 큰 묶음 받기
   const pk = await packFetch(); if (!pk || pk.ver === ST.pm.ver) return;
   try { const key = await idbGet('pk'); const n = await packOpen(pk, key); toast(`개인 메모가 새로 들어왔습니다 · ${n}편`, 3600); if (/^#\/(memos|memo|find)/.test(location.hash)) route(); }
   catch (e) { packAsk(true); }
@@ -2164,7 +2169,7 @@ function vHelp() {
     ${sec('뒤로 가기 · 아래 메뉴', `왼쪽 위 ${ic('back')}와 휴대폰 뒤로 가기는 바로 앞 화면으로 돌아갑니다. 첫 화면에서는 두 번 눌러야 앱이 닫힙니다. 아래 메뉴는 어느 화면에서나 홈 · 메모 · 되새김 · 글자(가가) · 사용법 및 설정, 다섯 칸이 같은 자리에 있습니다. 메모와 되새김 화면에서는 자기 자리가 정렬로 바뀌고, 지금 있는 화면의 아이콘은 진하게 보입니다. 찾기는 오른쪽 위 돋보기입니다. 책 속에서는 맨 위 [제n권 일자별 읽기]나 [제n권 주제별 읽기]를 누르면 그 홈으로, 집 아이콘을 누르면 홈으로 갑니다.`)}
     ${tier('② 표시 · 메모')}
     ${sec('구절 고르기 · 표시', `구절을 길게 누르면 그 낱말이 골라지고, 손을 떼지 않고 그대로 끌면 원하는 데까지 넓어집니다. 손을 떼면 아래에 메뉴가 뜹니다. 휴대폰의 복사·검색 메뉴는 뜨지 않습니다. 한 절 전체는 메뉴 오른쪽 위 [구절 전체]로 고릅니다. 다시 고르려면 다시 길게 누르면 됩니다. 윗줄은 ${ic('hl')} 형광펜, <b>U</b> 밑줄, <b>B</b> 진하게, ${ic('er')} 삭제, 아랫줄은 ${ic('memo')} 메모, ${ic('copy')} 복사, ${ic('share')} 공유입니다. 서식은 눌러도 메뉴가 닫히지 않아 연달아 고를 수 있습니다. 일자별에서 하든 주제별에서 하든 같은 자리에 남습니다.`, FIG.mark())}
-    ${sec('메모', `아래 메뉴 “메모”에서 분류별로 보고 “새 메모”로 씁니다. 구절 메뉴의 ${ic('memo')} 메모로 쓰면 그 구절에 걸리고, 구절 끝에 ${ic('memo')} 메모 아이콘이 붙습니다. 쓰기 화면은 제목부터 도구 두 줄까지가 고정되어 있습니다. 윗줄은 대제목 · 소제목 · 정렬 · 들여쓰기 · 목록 · 인용 · 구분선, 아랫줄은 굵게 · 밑줄 · 형광펜 · 글꼴 · 서식 삭제 · 그림 삽입 · 실행 취소 · 재실행입니다. 인용은 커서가 있는 문단을 인용 칸으로 만들고, 한 번 더 누르면 풀립니다. 제목 칸 오른쪽 ${ic('eye')} 미리보기를 누르면 완성된 모습이 보입니다. 접을 부분을 드래그해 고르고 위의 “접기”를 누르면 고른 부분의 첫 줄이 제목이 되고 나머지가 그 아래에 접힙니다. “접기 해제”는 고른 곳의 접기를 풀어 원래 글로 돌려놓습니다. 저장은 오른쪽 위 ${ic('check')}입니다. 불러온 묵상&연구 메모도 ${ic('pen')} 수정으로 고칠 수 있고, 고친 내용은 이 휴대폰에 따로 보관됩니다. 저장된 메모에서 글을 끌어 고르면 서식 메뉴가 뜨고, 고른 글에 부분 메모도 붙일 수 있습니다. 메모에 표나 그림을 넣은 경우, 표는 카드로 접어 볼 수 있고 그림은 누르면 크게 보이며 두 손가락으로 확대할 수 있습니다. 크게 본 사진은 오른쪽 위 “공유”와 “다운로드”로 보내거나 휴대폰에 저장할 수 있습니다. 표나 글을 사진으로만 담았던 묵상&연구 메모는 글로 옮겨 항목마다 접어 두었고(폰 한 화면이 넘는 경우), “원본 보기”를 누르면 원래 사진을 그대로 볼 수 있습니다. AI 답에 “요약”과 “상세”가 있으면 무엇을 넣을지 묻고 자동으로 접어 둡니다. 저장된 메모의 접기는 상자를 누르면 그 상자 안에 내용이 펼쳐지고, 오른쪽 ⌄ ⌃ 아이콘으로 펼침·접힘이 보입니다. 접기가 여럿인 메모는 본문 위 오른쪽 아이콘으로 모두 펼치거나 모두 접습니다. 메모를 읽다 화면 가운데를 누르면 아래 메뉴의 “읽는 방식”에서 스크롤과 쪽 넘기기를 고를 수 있고(본문 읽기와 따로 기억합니다), 쪽 넘기기에서는 양 끝을 누르거나 밀어 넘깁니다. 쓰기 화면의 “분류” 줄을 누르면 분류를 고릅니다. 안이 빈 접기는 저장할 때 지워집니다. 저장된 메모의 ${ic('pen')} 수정 · ${ic('x')} 삭제로 고치거나 지웁니다. 메모 머리의 ${ic('flag')} 대표 구절, ${ic('link')} 관련 구절을 누르면 그 본문으로 가고 “메모로 돌아가기 ›”로 돌아옵니다.`, `<div class="hrow"><span>${ic('flag')}<b>대표 구절 · 요 3:16</b></span></div><div class="hrow"><span>${ic('link')}관련 구절</span><span class="pastef">롬 5:8</span><span class="pastef">요일 4:10</span></div>`)}
+    ${sec('메모', `아래 메뉴 “메모”에서 분류별로 보고 “새 메모”로 씁니다. 구절 메뉴의 ${ic('memo')} 메모로 쓰면 그 구절에 걸리고, 구절 끝에 ${ic('memo')} 메모 아이콘이 붙습니다. 쓰기 화면은 제목부터 도구 두 줄까지가 고정되어 있습니다. 윗줄은 대제목 · 소제목 · 정렬 · 들여쓰기 · 목록 · 인용 · 구분선, 아랫줄은 굵게 · 밑줄 · 형광펜 · 글꼴 · 서식 삭제 · 그림 삽입 · 실행 취소 · 재실행입니다. 인용은 커서가 있는 문단을 인용 칸으로 만들고, 한 번 더 누르면 풀립니다. 제목 칸 오른쪽 ${ic('eye')} 미리보기를 누르면 완성된 모습이 보입니다. 접을 부분을 드래그해 고르고 위의 “접기”를 누르면 고른 부분의 첫 줄이 제목이 되고 나머지가 그 아래에 접힙니다. “접기 해제”는 고른 곳의 접기를 풀어 원래 글로 돌려놓습니다. 저장은 오른쪽 위 ${ic('check')}입니다. 불러온 묵상&연구 메모도 ${ic('pen')} 수정으로 고칠 수 있고, 고친 내용은 이 휴대폰에 따로 보관됩니다. 저장된 메모에서 글을 끌어 고르면 서식 메뉴가 뜨고, 고른 글에 부분 메모도 붙일 수 있습니다. 메모에 표나 그림을 넣은 경우, 표는 줄마다 접기 상자로 바뀌어 첫 칸이 제목이 되고 나머지 칸은 펼치면 보이며, 그림은 누르면 크게 보이며 두 손가락으로 확대할 수 있습니다. 크게 본 사진은 오른쪽 위 “공유”와 “다운로드”로 보내거나 휴대폰에 저장할 수 있습니다. 표나 글을 사진으로만 담았던 묵상&연구 메모는 글로 옮겨 항목마다 접어 두었고(폰 한 화면이 넘는 경우), “원본 보기”를 누르면 원래 사진을 그대로 볼 수 있습니다. AI 답에 “요약”과 “상세”가 있으면 무엇을 넣을지 묻고 자동으로 접어 둡니다. 저장된 메모의 접기는 상자를 누르면 그 상자 안에 내용이 펼쳐지고, 오른쪽 ⌄ ⌃ 아이콘으로 펼침·접힘이 보입니다. 접기가 여럿인 메모는 본문 위 오른쪽 아이콘으로 모두 펼치거나 모두 접습니다. 메모를 읽다 화면 가운데를 누르면 아래 메뉴의 “읽는 방식”에서 스크롤과 쪽 넘기기를 고를 수 있고(본문 읽기와 따로 기억합니다), 쪽 넘기기에서는 양 끝을 누르거나 밀어 넘깁니다. 쓰기 화면의 “분류” 줄을 누르면 분류를 고릅니다. 안이 빈 접기는 저장할 때 지워집니다. 저장된 메모의 ${ic('pen')} 수정 · ${ic('x')} 삭제로 고치거나 지웁니다. 메모 머리의 ${ic('flag')} 대표 구절, ${ic('link')} 관련 구절을 누르면 그 본문으로 가고 “메모로 돌아가기 ›”로 돌아옵니다.`, `<div class="hrow"><span>${ic('flag')}<b>대표 구절 · 요 3:16</b></span></div><div class="hrow"><span>${ic('link')}관련 구절</span><span class="pastef">롬 5:8</span><span class="pastef">요일 4:10</span></div>`)}
     ${sec('되새김 · 찾기', `${ic('bmk')} 되새김에는 형광펜 · 밑줄 · 진하게로 표시한 말씀이 모두 모입니다. 아래 메뉴의 정렬에서 성경 순서 · 책 순서 · 최신 순을 고르고, 오른쪽 위에서 권을 고릅니다. 오른쪽 위 ${ic('search')} 찾기에서 구절(예: 요 3:16)이나 낱말을 찾고, 범위를 전체 · 본문 · 메모 중에서 고릅니다. 결과는 본문과 메모로 나뉘어 보입니다.`, '<div class="hrow"><span class="pastef on">전체</span><span class="pastef">본문</span><span class="pastef">메모</span></div>')}
     ${ai ? tier('③ AI 활용') + sec('AI 활용 아이콘 세 가지', `구절을 고른 뒤 ${ic('ask')} AI와 간단 Q&A, ${ic('gem')} AI로 번역 비교를 누릅니다. 구절 표시 옆 ${ic('cmp')} 나침반은 AI로 배경·문맥 살피기입니다. 누르면 잠시 “붙여넣으세요” 안내가 뜬 뒤 연결한 AI 창이 열립니다. 구절과 요청은 이미 복사되어 있으니, Claude·Gemini는 입력칸을 길게 눌러 붙여넣기 한 뒤 보내면 됩니다. ChatGPT는 입력칸에 채워진 채 열리니 보내기만 누르면 됩니다. 본문 아래 펼친 개역한글 줄도 길게 눌러 고르면 AI에게 물을 수 있습니다. 최종 판단은 스스로 내리며 묵상하세요.`, FIG.ai()) + sec('AI 지침', '사용법 및 설정 › AI 활용에서 세 지침을 “AI에 저장”해 두어야 AI가 짧은 요청만으로 지침대로 답합니다. 지침은 “전문 보기”로 읽고 “수정”으로 바꿀 수 있습니다. 저장한 지침은 단추가 “✓ 저장 완료”로 바뀌고, 다시 누르면 새로 저장합니다. 붙여 넣을 때 AI가 “외부 지시문일 수 있다”는 안내를 띄울 수 있는데, 이 앱의 성경 읽기 지침이니 읽어 보고 보내시면 됩니다. 연결할 AI를 바꾸면 새 AI에 지침을 다시 저장해 주세요.') : ''}
     ${tier('더 알아두기')}

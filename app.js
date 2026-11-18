@@ -1,6 +1,6 @@
 'use strict';
 /* 365 복음 묵상 — 2차 앱 (개인용·배포용 공통 코드, 데이터만 다름) */
-const VERSION = '0.9.14';
+const VERSION = '0.9.15';
 const APPNAME = '365 복음 묵상';
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
@@ -345,7 +345,7 @@ function route() {
   const h = location.hash.replace(/^#\/?/, '');
   const [path, qs] = h.split('?');
   const seg = path.split('/'), q0 = new URLSearchParams(qs || '');
-  if (seg[0] !== 'read' && !(seg[0] === 'edit' && seg[1] === 'new' && q0.get('at'))) clearDual(); // 홈·목차·메모로 나가면 대역 해제 (읽다가 메모 쓰러 갈 때는 유지)
+  if (seg[0] !== 'read' && !(seg[0] === 'edit' && seg[1] === 'new' && q0.get('at'))) { clearDual(); deepOpen.clear(); } // 홈·목차·메모로 나가면 대역 해제 (읽다가 메모 쓰러 갈 때는 유지)
   const q = new URLSearchParams(qs || '');
   window.scrollTo(0, 0);
   if (!ST.set.setupDone && seg[0] !== 'setup' && seg[0] !== 'help' && seg[0] !== 'tour') return go('#/setup', true);
@@ -607,7 +607,7 @@ function verseInner(pid, v, text) {
 }
 function isBm(pid, v) { return ST.bm.some(b => b.pid === pid && b.v === v); }
 function verseHTML(day, pid, v, text) {
-  const ms = (D.memoAt[day.id + ':' + v] || []).filter(id => !((D.memoAt[day.id + ':' + (v + 1)] || []).includes(id) && (D.text[day.vol][pid] || []).some(x => x[0] === v + 1))); // 여러 절에 걸친 메모는 마지막 절에 한 번만
+  const ms = (D.memoMark && D.memoMark[pid + ':' + v]) || [];
   const mm = ms.length ? `<button class="mm" data-memo="${ms[0]}"${ms.length > 1 ? ` data-many="1"` : ''} aria-label="메모">${icon('memo')}</button>` : '';
   const bm = '';
   return `<p class="v" data-pid="${pid}" data-v="${v}"><span class="n">${v}</span><span class="t">${verseInner(pid, v, text)}</span>${mm}${bm}</p>${parallelHTML(pid, v)}`;
@@ -656,7 +656,7 @@ function dayHTML(day, opts = {}) {
     const pid = `${day.id}-p${day.p.length + k + 1}`, open = deepOpen.has(pid), full = /:/.test(x.ref) ? x.ref : x.ref + '장';
     D.text[day.vol][pid] = x.text;
     deepH += `<div class="deep ${open ? 'open' : ''}" data-deep="${pid}"><button class="dh" data-dtg="${pid}"><span class="dl">더 깊고 넓게 읽기</span><span class="car">${icon(open ? 'chu' : 'chd')}${open ? '접기' : '펼치기'}</span><span class="dt">${esc(full)}</span></button>`;
-    if (open) { h2 = ''; x.text.forEach(([v, t]) => { h2 += verseHTML(day, pid, v, t); }); deepH += `<div class="dbody" data-pid="${pid}">${h2}</div><button class="dend" data-dtg="${pid}" data-end="1" aria-label="접기">${icon('chu')}</button>`; }
+    if (open) { h2 = `<div class="phrow"><h2 class="ph" data-pid="${pid}">${esc(full)}</h2>${headTools(pid)}</div>${dualBarHTML(day, day.p.length + k)}`; x.text.forEach(([v, t]) => { h2 += verseHTML(day, pid, v, t); }); deepH += `<div class="dbody" data-pid="${pid}">${h2}</div><button class="dend" data-dtg="${pid}" data-end="1" aria-label="접기">${icon('chu')}</button>`; }
     deepH += '</div>';
   });
   if (!opts.noEnd) {
@@ -837,7 +837,7 @@ function bindFlow(fl, day, rerender) {
     const nd = e.target.closest('[data-nextday]'); if (nd) { SLIDE = 'next'; go(`#/read/${nd.dataset.nextday}${fl._t || ''}`, true); return; }
     const mm = e.target.closest('.mm');
     if (mm) {
-      e.stopPropagation(); const p = mm.closest('p.v'), ids = D.memoAt[day.id + ':' + p.dataset.v] || [];
+      e.stopPropagation(); const p = mm.closest('p.v'), ids = (D.memoMark && D.memoMark[p.dataset.pid + ':' + p.dataset.v]) || D.memoAt[day.id + ':' + p.dataset.v] || [];
       if (ids.length > 1) memoPick(ids); else go(`#/memo/${mm.dataset.memo}`);
       return;
     }
@@ -994,9 +994,9 @@ function selFromRange(rg) { // 고른 범위 → 구절별 (시작·끝 글자 �
 }
 
 function refOf(items) {
-  const d = D.days[items[0].pid.split('-p')[0]], p = d.p[+items[0].pid.split('-p')[1] - 1];
+  const d = D.days[items[0].pid.split('-p')[0]], p = d.pp[+items[0].pid.split('-p')[1] - 1];
   const a = items[0].v, b = items[items.length - 1].v;
-  return `${p.book} ${p.ch}:${a}${b !== a ? '~' + b : ''}`;
+  return `${p.book || String(p.ref).replace(/\s*\d.*$/, '')} ${p.ch}:${a}${b !== a ? '~' + b : ''}`;
 }
 function selVersesText(items) { return items.map(x => (items.length > 1 ? x.v + ' ' : '') + vtext(x.pid, x.v)).join('\n'); }
 function sameMark(m, x, k, c) { return m.pid === x.pid && m.v === x.v && m.s === x.s && m.e === x.e && m.k === k && (k === 'b' || m.c === c); }
@@ -1222,8 +1222,13 @@ function allMemos() { // 내장 메모를 휴대폰에서 고친 내용(ST.mo)�
 }
 function memoById(id) { return allMemos().find(m => m.id === id); }
 function indexMemos() {
-  D.memoAt = {};
+  D.memoAt = {}; D.memoMark = {};
   for (const m of allMemos()) for (const a of m.anchors || []) (D.memoAt[a.day + ':' + a.v] = D.memoAt[a.day + ':' + a.v] || []).push(m.id);
+  // 메모 아이콘 자리: 대표 구절·관련 구절마다 한 절이면 그 절, 여러 절이면 마지막 절 (같은 메모는 한 자리에 한 번)
+  for (const m of allMemos()) {
+    let r; try { r = memoRel(m); } catch (e) { continue; }
+    [r.rep].concat(r.others).filter(Boolean).forEach(i => { const k = i.pid + ':' + i.b, a = (D.memoMark[k] = D.memoMark[k] || []); if (!a.includes(m.id)) a.push(m.id); });
+  }
 }
 function catsOf(m) { return ST.mcat[m.id] || m.cats || []; }
 function catList() { return CATS0.concat(ST.cats.filter(c => !CATS0.includes(c))); }

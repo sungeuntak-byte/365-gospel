@@ -1109,3 +1109,6 @@ label.chk input[type=checkbox],.in-chk input[type=checkbox]{margin-top:calc((1.5
 .nav.ic button[data-nav^="#/col"] svg.i{transform:none}
 .nav .gg{transform:translateY(1px)}
 .memo .mbody.ed{font-family:var(--rf,var(--serif));font-size:calc(var(--fs) - 2px)}
+.deep.open .dh .dt{display:none}
+.deep .dbody .phrow{margin:2px 0 4px}
+.deep .dbody h2.ph{font-family:var(--serif);font-size:calc(var(--fs) - 1px);color:#5a3f28}

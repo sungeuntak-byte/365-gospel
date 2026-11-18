@@ -754,7 +754,6 @@ html,body{overscroll-behavior-y:none}
 /* 대역: 일부만 켜진 상태 */
 .dv.some{background:#f1ece2;color:var(--v1)}
 /* 메모 본문 고딕 · 조금 크게 */
-.memo .mbody:not(.ed),body[data-font] .memo .mbody:not(.ed){font-family:"BookSans",var(--sans)!important;font-size:calc(var(--fs) + 1px);line-height:1.85}
 /* 처음 설정: 경로 띠 */
 .pathband{display:inline-block;background:#f3e3c6;border:1px solid #c7ad8c;border-radius:12px;padding:0 9px;font-weight:700;color:#6f5236;line-height:1.6;text-indent:0}
 
@@ -1066,3 +1065,47 @@ input[type=checkbox]:checked:after{content:"";position:absolute;left:5px;top:1.5
 .btn.dark{background:var(--tabon);border-color:var(--tabon)}
 /* 전문 보기·수정 글씨: 사용법만큼, 가가 연동 */
 .gfull,.gedit{font-size:calc(15px * var(--ui));line-height:1.75}
+
+/* ===== 9차-15 ===== */
+/* 체크 칸: 맑은 초록 */
+.on>.cb,.done>.cb,.cb.on,input[type=checkbox]:checked{background:#58ae7a;border-color:#58ae7a}
+.readbtn.on,.gb.dark.done{background:#ecf7f0;border-color:#c6e6d2;color:#3b8a5c}
+.set label.chk,label.chk,.in-chk{display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+label.chk input[type=checkbox],.in-chk input[type=checkbox]{margin-top:calc((1.5em - 20px) / 2)}
+/* 더 깊고 넓게 읽기: 읽기 완료 아래, 연한 베이지 상자 */
+.deep{background:#f3eee4;border:0;border-radius:12px;padding:4px 12px 6px;margin:16px 0 10px}
+.deep .dh{display:grid;grid-template-columns:1fr auto;align-items:center;row-gap:2px;padding:8px 0 6px;text-align:left}
+.deep .dh .dl{font-family:var(--sans);font-size:12px;font-weight:700;color:#8a6a45;letter-spacing:.02em}
+.deep .dh .car{display:inline-flex;align-items:center;gap:2px;font-family:var(--sans);font-size:12px;font-weight:600;color:#8a7a68}
+.deep .dh .car svg.i{width:16px;height:16px}
+.deep .dh .dt{grid-column:1/-1;font-family:var(--serif);font-size:calc(var(--fs) - 1px);font-weight:700;color:#5a3f28}
+.deep .dbody{border-top:1px solid #e3d8c6;padding-top:6px;color:#3f3830}
+.deep .dend{display:flex;margin:4px 0 2px auto;width:40px;height:32px;align-items:center;justify-content:center;color:#8a6a45}
+.deep .dend svg.i{width:22px;height:22px}
+.dayend.rest{margin-top:6px}
+/* 메모 머리: 대표 구절 + 관련 구절을 한 상자로, 아래 구분선 */
+.mhbox{background:var(--sand-bg);border-radius:12px;padding:2px 0;margin-bottom:14px;position:relative}
+.mhbox:after{content:"";position:absolute;left:0;right:0;bottom:-8px;border-bottom:1px solid #e3d8c6}
+.mhbox .repbox,.mhbox .repbox:last-child{background:transparent;border-radius:0}
+.mhbox .relbox,.mhbox .relbox:not(.joined){background:transparent;border:0;border-radius:0;padding:4px 12px 10px}
+.mhbox .relbox.joined{border-top:1px dashed #dccdb6}
+.rchips{align-items:center}
+.rchips .rlab{display:inline-flex;align-items:center;gap:3px;font-size:12px;color:#8a7a68;margin:0 2px 0 0;white-space:nowrap}
+.rchips .rlab svg.i{width:15px;height:15px;color:var(--sand-ic)}
+/* 메모 본문: 대표 구절과 같은 명조·같은 크기 */
+.memo .mbody{font-family:var(--rf,var(--serif))!important;font-size:calc(var(--fs) - 2px)!important;line-height:1.85}
+.memo .mbody h1,.memo .mbody h2,.memo .mbody h3:not(.fold){font-family:var(--sans)}
+/* 작은 판 닫기 ✕ */
+.uipop{position:fixed}
+.uipop .pclose{position:absolute;top:4px;right:6px;width:30px;height:30px;font-size:20px;line-height:1;color:#8a9099;display:flex;align-items:center;justify-content:center}
+.uipop .uih,.uipop>.lab:first-of-type{padding-right:26px}
+.uipop .uih{padding-left:26px}
+/* 아래 메뉴: 위아래 여백 같게, 아이콘 크기·아래 선 맞춤 */
+.nav,.hdin .nav{padding-top:12px;padding-bottom:calc(12px + var(--safe-b))}
+.nav .mgo{display:none}
+.nav.ic svg.i{width:26px;height:26px}
+.nav.ic button[data-nav="#/memos"] svg.i{width:25px;height:25px}
+.nav.ic button[data-nav="#/set"] svg.i{width:27.5px;height:27.5px;transform:translateY(-1.5px)}
+.nav.ic button[data-nav^="#/col"] svg.i{transform:none}
+.nav .gg{transform:translateY(1px)}
+.memo .mbody.ed{font-family:var(--rf,var(--serif));font-size:calc(var(--fs) - 2px)}

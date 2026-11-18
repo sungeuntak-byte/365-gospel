@@ -1,6 +1,6 @@
 'use strict';
 /* 365 복음 묵상 — 2차 앱 (개인용·배포용 공통 코드, 데이터만 다름) */
-const VERSION = '0.9.13';
+const VERSION = '0.9.14';
 const APPNAME = '365 복음 묵상';
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
@@ -27,7 +27,7 @@ const NOTIFY_TITLE = '오늘의 복음 묵상';
 const EN = { GEN: 'Genesis', EXO: 'Exodus', LEV: 'Leviticus', NUM: 'Numbers', DEU: 'Deuteronomy', JOS: 'Joshua', JDG: 'Judges', RUT: 'Ruth', '1SA': '1 Samuel', '2SA': '2 Samuel', '1KI': '1 Kings', '2KI': '2 Kings', '1CH': '1 Chronicles', '2CH': '2 Chronicles', EZR: 'Ezra', NEH: 'Nehemiah', EST: 'Esther', JOB: 'Job', PSA: 'Psalms', PRO: 'Proverbs', ECC: 'Ecclesiastes', SNG: 'Song of Songs', ISA: 'Isaiah', JER: 'Jeremiah', LAM: 'Lamentations', EZK: 'Ezekiel', DAN: 'Daniel', HOS: 'Hosea', JOL: 'Joel', AMO: 'Amos', OBA: 'Obadiah', JON: 'Jonah', MIC: 'Micah', NAM: 'Nahum', HAB: 'Habakkuk', ZEP: 'Zephaniah', HAG: 'Haggai', ZEC: 'Zechariah', MAL: 'Malachi', MAT: 'Matthew', MRK: 'Mark', LUK: 'Luke', JHN: 'John', ACT: 'Acts', ROM: 'Romans', '1CO': '1 Corinthians', '2CO': '2 Corinthians', GAL: 'Galatians', EPH: 'Ephesians', PHP: 'Philippians', COL: 'Colossians', '1TH': '1 Thessalonians', '2TH': '2 Thessalonians', '1TI': '1 Timothy', '2TI': '2 Timothy', TIT: 'Titus', PHM: 'Philemon', HEB: 'Hebrews', JAS: 'James', '1PE': '1 Peter', '2PE': '2 Peter', '1JN': '1 John', '2JN': '2 John', '3JN': '3 John', JUD: 'Jude', REV: 'Revelation' };
 const enRef = p => `${EN[p.code] || p.code} ${p.ch}:${p.vs}-${p.ve}`;
 const yv = (id, ab) => (p, v1, v2) => { const a = v1 || p.vs, b = v2 || (v1 ? v1 : p.ve); return `https://www.bible.com/bible/${id}/${p.code}.${p.ch}${p.whole && !v1 ? '' : '.' + a + (b !== a ? '-' + b : '')}.${ab}`; };
-const EXT = { krv: { name: '개역한글', url: yv(88, 'KRV') }, esv: { name: 'ESV', url: yv(59, 'ESV') }, saenew: { name: '새번역', url: yv(142, 'RNKSV') }, niv: { name: 'NIV', url: yv(111, 'NIV') } };
+const EXT = { krv: { name: '개역한글', url: yv(88, 'KRV') }, esv: { name: 'ESV', url: yv(59, 'ESV') }, saenew: { name: '새번역', url: yv(142, 'RNKSV') }, amp: { name: 'AMP', url: yv(1588, 'AMP') } };
 const BOOKS = Object.keys(EN);
 const RNG = s => String(s).replace(/[–-](?=\d)/g, '~');
 const INTRO = ['나의 복음과 예수 그리스도를 전파함은', '영세 전부터 감추어졌다가 이제는 나타내신 바 되었으며', '영원하신 하나님의 명을 따라 선지자들의 글로 말미암아', '모든 민족이 믿어 순종하게 하시려고 알게 하신 바', '그 신비의 계시를 따라 된 것이니', '이 복음으로', '너희를 능히 견고하게 하실 지혜로우신 하나님께', '예수 그리스도로 말미암아', '영광이 세세무궁하도록 있을지어다', '아멘'];
@@ -213,14 +213,16 @@ function nav(on, opts = {}) {
   const it = [ctx === 'home' ? home.replace('class="', 'class="on ') : home, ctx === 'memo' ? (opts.sort ? sort : memo.replace('class="', 'class="on ')) : memo, ctx === 'col' ? sort : col, ui, set];
   return `<nav class="nav ic n5 c-${ctx}">${it.join('')}</nav>`;
 }
-function navAbove(p) { const nv = $('.nav'); p.style.bottom = nv ? (innerHeight - nv.getBoundingClientRect().top + 8) + 'px' : ''; }
+function navAbove(p, btn) { const nv = $('.nav'); p.style.bottom = nv ? (innerHeight - nv.getBoundingClientRect().top + 8) + 'px' : ''; if (btn) requestAnimationFrame(() => { const r = btn.getBoundingClientRect(), w = p.offsetWidth; p.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + 'px'; p.style.right = 'auto'; }); }
+const PX = '<button class="pclose" data-pclose aria-label="닫기">' + '×' + '</button>';
+document.addEventListener('click', e => { if (e.target.closest('[data-pclose]')) closeOverlay(); });
 function sortPicker(btn) { // 정렬 고르기 (메모: 구절·날짜 / 모아 보기: 본문·최근)
   const p = $('#uipop'), memo = /^#\/memos/.test(location.hash);
   if (!p.hidden) { closeOverlay(); return; }
   const cur = memo ? (ST.set.msort || 'verse') : colSort;
   const opts = memo ? [['verse', '구절 순서'], ['date', '최신 순']] : [['bible', '성경 순서'], ['text', '책 순서'], ['recent', '최신 순']];
-  p.classList.add('fromnav'); navAbove(p);
-  p.innerHTML = `<div class="lab">정렬</div>${opts.map(([v, t]) => `<button class="srow ${v === cur ? 'on' : ''}" data-sv="${v}">${t}</button>`).join('')}`;
+  p.classList.add('fromnav'); navAbove(p, btn);
+  p.innerHTML = `${PX}<div class="lab">정렬</div>${opts.map(([v, t]) => `<button class="srow ${v === cur ? 'on' : ''}" data-sv="${v}">${t}</button>`).join('')}`;
   openOverlay(p);
   $$('[data-sv]', p).forEach(b => b.onclick = () => { if (memo) { ST.set.msort = b.dataset.sv; save(); } else colSort = b.dataset.sv; closeOverlay(); setTimeout(route, 30); });
 }
@@ -254,8 +256,8 @@ function goBack() { if (history.state && history.state.base) go('#/'); else hist
 function uiPicker(btn) {
   const p = $('#uipop');
   if (!p.hidden) { closeOverlay(); return; }
-  p.classList.toggle('fromnav', btn.classList.contains('navui')); if (btn.classList.contains('navui')) navAbove(p); else p.style.bottom = '';
-  const draw = () => { p.innerHTML = `<div class="uih">화면 글자 크기</div><div class="ustep"><button data-us="-1" aria-label="작게" ${ST.set.ui <= 0 ? 'disabled' : ''}>−</button><b>${UI_STEPS[ST.set.ui][1]}</b><button data-us="1" aria-label="크게" ${ST.set.ui >= UI_STEPS.length - 1 ? 'disabled' : ''}>+</button></div>`;
+  p.classList.toggle('fromnav', btn.classList.contains('navui')); if (btn.classList.contains('navui')) navAbove(p, btn); else { p.style.bottom = ''; p.style.left = ''; p.style.right = ''; }
+  const draw = () => { p.innerHTML = `${PX}<div class="uih">화면 글자 크기</div><div class="ustep"><button data-us="-1" aria-label="작게" ${ST.set.ui <= 0 ? 'disabled' : ''}>−</button><b>${UI_STEPS[ST.set.ui][1]}</b><button data-us="1" aria-label="크게" ${ST.set.ui >= UI_STEPS.length - 1 ? 'disabled' : ''}>+</button></div>`;
     $$('[data-us]', p).forEach(x => x.onclick = () => { ST.set.ui = Math.max(0, Math.min(UI_STEPS.length - 1, ST.set.ui + +x.dataset.us)); save(); applyView(); draw(); }); };
   draw();
   openOverlay(p);
@@ -605,7 +607,7 @@ function verseInner(pid, v, text) {
 }
 function isBm(pid, v) { return ST.bm.some(b => b.pid === pid && b.v === v); }
 function verseHTML(day, pid, v, text) {
-  const ms = D.memoAt[day.id + ':' + v] || [];
+  const ms = (D.memoAt[day.id + ':' + v] || []).filter(id => !((D.memoAt[day.id + ':' + (v + 1)] || []).includes(id) && (D.text[day.vol][pid] || []).some(x => x[0] === v + 1))); // 여러 절에 걸친 메모는 마지막 절에 한 번만
   const mm = ms.length ? `<button class="mm" data-memo="${ms[0]}"${ms.length > 1 ? ` data-many="1"` : ''} aria-label="메모">${icon('memo')}</button>` : '';
   const bm = '';
   return `<p class="v" data-pid="${pid}" data-v="${v}"><span class="n">${v}</span><span class="t">${verseInner(pid, v, text)}</span>${mm}${bm}</p>${parallelHTML(pid, v)}`;
@@ -633,7 +635,7 @@ function dualBarHTML(day, j) {
   if (!on.bar) return '';
   const inApp = k => k === 'krv' && D.krvOK;
   const b = k => inApp(k) ? `<button class="dv ${on[k] ? 'on' : on.some ? 'some' : ''}" data-dv="${k}" data-pid="${pid}">${EXT[k].name}<span class="car">${on[k] ? '⌃' : '⌄'}</span></button>` : `<button class="dv ext" data-ext="${k}" data-pid="${pid}">${EXT[k].name}<span class="car">↗</span></button>`;
-  return `<div class="dvbar" data-pid="${pid}">${b('krv')}<span class="sep">·</span>${b('esv')}<span class="bar2"></span><button class="dv ext" data-ext="saenew" data-pid="${pid}">새번역<span class="car">↗</span></button><span class="sep">·</span><button class="dv ext" data-ext="niv" data-pid="${pid}">NIV<span class="car">↗</span></button></div>`;
+  return `<div class="dvbar" data-pid="${pid}">${b('krv')}<span class="sep">·</span>${b('esv')}<span class="bar2"></span><button class="dv ext" data-ext="saenew" data-pid="${pid}">새번역<span class="car">↗</span></button><span class="sep">·</span><button class="dv ext" data-ext="amp" data-pid="${pid}">AMP<span class="car">↗</span></button></div>`;
 }
 const deepOpen = new Set();
 // 다음·이전 날: 일자별은 달력 순서, 주제별은 주제 › 단원 순서
@@ -641,7 +643,7 @@ function stepDay(day, d, topic) { if (topic) { const id = D.tseq[D.tidx[day.id] 
 const stepLabel = (x, topic) => topic ? `${esc(x.p[0].ref)}${x.p.length > 1 ? ' 외' : ''}` : dlabel(x);
 function dayHTML(day, opts = {}) {
   const tp = D.topics[day.t], sb = D.subs[day.s], T = !!opts.topic;
-  let h = '';
+  let h = '', h2 = '';
   if (!opts.noHead) h += `<div class="dayhead ${T ? 'topic' : ''}">${T ? '' : `<div class="vol">${vlabel(day.vol)}</div><h1>${dlabel(day)}</h1>`}<div class="tp">${esc(tp.title)}</div><div class="cln"></div><div class="st">${esc(sb.title)}</div></div>`;
   day.p.forEach((p, j) => {
     const pid = `${day.id}-p${j + 1}`;
@@ -649,18 +651,19 @@ function dayHTML(day, opts = {}) {
     h += `<div class="phrow"><h2 class="ph" data-pid="${pid}">${esc(p.ref)}${bm}</h2>${headTools(pid)}</div>${dualBarHTML(day, j)}`;
     (D.text[day.vol][pid] || []).forEach(([v, t]) => { h += verseHTML(day, pid, v, t); });
   });
+  let deepH = '';
   if (day.x.length && !opts.noDeep) day.x.forEach((x, k) => {
-    const pid = `${day.id}-p${day.p.length + k + 1}`, open = deepOpen.has(pid);
+    const pid = `${day.id}-p${day.p.length + k + 1}`, open = deepOpen.has(pid), full = /:/.test(x.ref) ? x.ref : x.ref + '장';
     D.text[day.vol][pid] = x.text;
-    h += `<div class="deep ${open ? 'open' : ''}" data-deep="${pid}"><button class="dh" data-dtg="${pid}"><span>더 깊고 넓게 읽기 · ${esc(x.short)}</span><span class="car">${open ? '⌃' : '⌄'}</span></button>`;
-    if (open) { h += `<div class="phrow"><h2 class="ph" data-pid="${pid}">${esc(x.ref)}</h2></div>`; x.text.forEach(([v, t]) => { h += verseHTML(day, pid, v, t); }); }
-    h += '</div>';
+    deepH += `<div class="deep ${open ? 'open' : ''}" data-deep="${pid}"><button class="dh" data-dtg="${pid}"><span class="dl">더 깊고 넓게 읽기</span><span class="car">${icon(open ? 'chu' : 'chd')}${open ? '접기' : '펼치기'}</span><span class="dt">${esc(full)}</span></button>`;
+    if (open) { h2 = ''; x.text.forEach(([v, t]) => { h2 += verseHTML(day, pid, v, t); }); deepH += `<div class="dbody" data-pid="${pid}">${h2}</div><button class="dend" data-dtg="${pid}" data-end="1" aria-label="접기">${icon('chu')}</button>`; }
+    deepH += '</div>';
   });
   if (!opts.noEnd) {
     const nxt = stepDay(day, 1, T);
     const sDays = sb.days, lastOfSub = sDays[sDays.length - 1] === day.id;
     const lastOfTp = lastOfSub && tp.subs[tp.subs.length - 1].id === sb.id;
-    let end = `<div class="dayend"><div class="rdline"><button class="readbtn ${isRead(day.id) ? 'on' : ''}" data-read="${day.id}"><span class="cb"></span><span>${dlabel(day)} ${isRead(day.id) ? '읽음' : '읽기 완료'}</span></button></div><div class="rdhint">${isRead(day.id) ? '다시 누르면 취소' : '눌러서 표시하기'}</div>
+    let end = `<div class="dayend"><div class="rdline"><button class="readbtn ${isRead(day.id) ? 'on' : ''}" data-read="${day.id}"><span class="cb"></span><span>${dlabel(day)} 읽기 완료</span></button></div><div class="rdhint">누르면 표시 · 다시 누르면 취소</div></div><!--DEEP--><div class="dayend rest">
       <div class="toclinks"><button data-go="#/toc/date?v=${day.vol}">‹ 일자별 목차</button><span>|</span><button data-go="#/toc/topic?v=${day.vol}">주제별 목차 ›</button></div>
       ${nxt ? `<button class="nextbtn" data-nextday="${nxt.id}">${T ? '다음 말씀 · ' + stepLabel(nxt, T) : dlabel(nxt)} ›</button>` : ''}`;
     if (lastOfSub) end += `<div class="unitend"><div class="ut">「${esc(sb.title)}」</div><div class="line">단원 끝</div></div>`;
@@ -668,8 +671,9 @@ function dayHTML(day, opts = {}) {
     end += '</div>';
     if (T) end = `<div class="datelink"><button data-go="#/read/${day.id}">${vlabel(day.vol)} ${dlabel(day)} · 일자별로 보기</button></div>` + end;
     const li = h.lastIndexOf('<p class="v"'); // 마지막 구절과 읽기 완료를 같은 쪽에
-    h = li >= 0 ? h.slice(0, li) + '<div class="keep">' + h.slice(li) + end + '</div>' : h + end;
-  }
+    const [first, rest] = end.split('<!--DEEP-->'); // 읽기 완료 → 더 깊고 넓게 읽기 → 목차·다음 날
+    h = li >= 0 ? h.slice(0, li) + '<div class="keep">' + h.slice(li) + first + '</div>' + deepH + rest : h + first + deepH + rest;
+  } else h += deepH;
   return h;
 }
 
@@ -784,7 +788,7 @@ async function vRead(id, at, fromMemo, deepX, topic) {
   else if (at) { const [pid, v] = at.split(':'); const el = $(`p.v[data-pid="${pid}"][data-v="${v}"]`, fl); if (el) pager.show(el); }
   else pager.go(0, false);
   hint(); saveRecent();
-  fl._opts = { noDeep: !!fromMemo && deepX == null, topic };
+  fl._opts = { noDeep: !!fromMemo && deepX == null, topic, noHead: true };
   fl._t = T1;
   bindFlow(fl, day, () => { const a = pager && pager.anchor(); vRead(id, a ? `${a.dataset.pid}:${a.dataset.v}` : null, fromMemo, deepX, topic); });
   if ($('#mband')) bindBand();
@@ -829,7 +833,7 @@ function readPanel(day, topic, memo) {
 function bindFlow(fl, day, rerender) {
   fl.addEventListener('click', e => {
     const r = e.target.closest('[data-read]');
-    if (r) { const on = !isRead(r.dataset.read); setRead(r.dataset.read, on); r.classList.toggle('on', on); r.innerHTML = `<span class="cb"></span><span>${dlabel(day)} ${on ? '읽음' : '읽기 완료'}</span>`; const hn = r.closest('.dayend') && $('.rdhint', r.closest('.dayend')); if (hn) hn.textContent = on ? '다시 누르면 취소' : '눌러서 표시하기'; r.classList.remove('pop'); void r.offsetWidth; r.classList.add('pop'); return; }
+    if (r) { const on = !isRead(r.dataset.read); setRead(r.dataset.read, on); r.classList.toggle('on', on); r.innerHTML = `<span class="cb"></span><span>${dlabel(day)} 읽기 완료</span>`; r.classList.remove('pop'); void r.offsetWidth; r.classList.add('pop'); return; }
     const nd = e.target.closest('[data-nextday]'); if (nd) { SLIDE = 'next'; go(`#/read/${nd.dataset.nextday}${fl._t || ''}`, true); return; }
     const mm = e.target.closest('.mm');
     if (mm) {
@@ -845,7 +849,7 @@ function bindFlow(fl, day, rerender) {
     const dv = e.target.closest('[data-dv]');
     if (dv) { toggleParallel(day, dv.dataset.pid, dv.dataset.dv, rerender); return; }
     const dt = e.target.closest('[data-dtg]');
-    if (dt) { const pid = dt.dataset.dtg; deepOpen.has(pid) ? deepOpen.delete(pid) : deepOpen.add(pid); const keep = pid; restorePAR(day).then(() => { fl.innerHTML = dayHTML(day, fl._opts || {}); if (pager) { pager.layout(); const el = $(`[data-deep="${keep}"]`, fl); if (el) pager.show(el); } }); return; }
+    if (dt) { const pid = dt.dataset.dtg; deepOpen.has(pid) ? deepOpen.delete(pid) : deepOpen.add(pid); const keep = pid; restorePAR(day).then(() => { fl.innerHTML = dayHTML(day, Object.assign({ noHead: true }, fl._opts || {})); if (pager) { pager.layout(); const el = $(`[data-deep="${keep}"]`, fl); if (el) pager.show(el); } }); return; }
     const bx = e.target.closest('[data-par]');
     if (bx) { parSheet(day, bx); return; }
   });
@@ -1212,7 +1216,10 @@ async function vCol() {
 }
 
 /* ---------- 메모: 색인·분류 ---------- */
-function allMemos() { return D.memos.concat(UM); }
+function allMemos() { // 내장 메모를 휴대폰에서 고친 내용(ST.mo)은 묶음이 바뀌어도 그대로
+  if (ST.mo) for (const m of D.memos) { const o = ST.mo[m.id]; if (o) { if (o.title != null) m.title = o.title; if (o.cats) m.cats = o.cats; } }
+  return D.memos.concat(UM);
+}
 function memoById(id) { return allMemos().find(m => m.id === id); }
 function indexMemos() {
   D.memoAt = {};
@@ -1266,14 +1273,14 @@ const relHref = (i, mid) => i.x ? `#/read/${i.day}?x=${i.k}&m=${mid}` : i.inX ? 
 function memoHeadHTML(m) {
   const { rep, others } = memoRel(m);
   if (!rep && !others.length) return '';
-  let h = '';
+  let h = '<div class="mhbox">';
   if (rep) {
     const t = vtext(rep.pid, rep.a), more = rep.b > rep.a;
     h += `<div class="repbox"><div class="rl"><span class="ri">${icon('flag')}<b>대표 구절 · ${esc(relLabel(rep))}</b></span><button data-go="${relHref(rep, m.id)}">${locLabel(rep.day)} ›</button></div>
       <div class="rt" id="rt"><span class="n">${rep.a}</span>${esc(t)}${more ? ` <span class="ell">…</span> <button class="rmore" id="rmore">(${rep.a + 1}${rep.b > rep.a + 1 ? '~' + rep.b : ''}절 전체 보기)</button>` : ''}</div></div>`;
   }
-  if (others.length) h += `<div class="relbox ${rep ? 'joined' : ''}"><span class="ri">${icon('link')}</span><div><div class="rlab">관련 구절</div><div class="rchips">${others.map(i => `<button class="${i.x ? 'xchip' : ''}" data-go="${relHref(i, m.id)}">${esc(relLabel(i))}</button>`).join('')}</div></div></div>`;
-  return h;
+  if (others.length) h += `<div class="relbox ${rep ? 'joined' : ''}"><div class="rchips"><span class="rlab">${icon('link')}관련 구절</span>${others.map(i => `<button class="${i.x ? 'xchip' : ''}" data-go="${relHref(i, m.id)}">${esc(relLabel(i))}</button>`).join('')}</div></div>`;
+  return h + '</div>';
 }
 function bindMemoHead(m) {
   const b = $('#rmore'); if (!b) return;
@@ -1335,7 +1342,7 @@ async function vMemo(id) {
       <div class="mbody ${ST.mind && ST.mind[m.id] === false ? 'noind' : ''}" id="mb">${onlyOrig ? m.orig : htmlOf(m)}</div>
       <div class="funread" id="fun" hidden></div>
       <div class="row" style="justify-content:center;gap:10px;margin-top:8px">
-        ${m.builtin ? '' : `<button class="quiet" data-go="#/edit/${m.id}">${icon('pen')}수정</button>`}<button class="quiet" id="mcopy">${icon('copy')}복사</button><button class="quiet" id="mshare">${icon('share')}공유</button>
+        <button class="quiet" data-go="#/edit/${m.id}">${icon('pen')}수정</button><button class="quiet" id="mcopy">${icon('copy')}복사</button><button class="quiet" id="mshare">${icon('share')}공유</button>
         ${m.builtin ? '' : `<button class="quiet" id="mdel">${icon('x')}삭제</button>`}
       </div>
     </div>${nav('memo', { ctx: 'memo' })}</div>`;
@@ -1389,6 +1396,7 @@ function memoEnhance(m) {
       if (hasSel() || MM_HELD || !$('#mmenu').hidden || Date.now() - lastMemoSel < 900) return;
       if (e.target.closest('.fold,a,img,button,sup,summary,.tcard,.pnote')) return;
       const x = e.clientX / innerWidth; if (x < .2 || x > .8) return;
+      if (Date.now() - ovJustClosed < 500) return; // 가운데를 다시 누르면 닫힘
       readPanel(null, false, true);
     });
   }
@@ -1414,7 +1422,8 @@ function imgView(src) { // 앱 안에서 사진 크게 보기: 두 손가락 확
 async function vEdit(id, at) {
   await loadAll();
   const isNew = id === 'new' || !id;
-  const m = isNew ? { id: 'u' + Date.now().toString(36), title: '', html: '', cats: [], anchors: [], style: '', created: new Date().toISOString(), updated: new Date().toISOString() } : UM.find(x => x.id === id);
+  const bi = !isNew && !UM.find(x => x.id === id) && D.memos.find(x => x.id === id);
+  const m = isNew ? { id: 'u' + Date.now().toString(36), title: '', html: '', cats: [], anchors: [], style: '', created: new Date().toISOString(), updated: new Date().toISOString() } : bi ? { id, title: bi.title, html: htmlOf(bi), cats: (bi.cats || []).slice(), anchors: (bi.anchors || []).slice(), _bi: bi } : UM.find(x => x.id === id);
   if (!m) return go('#/memos', true);
   let cats = (m.cats || []).slice(), anchors = (m.anchors || []).slice();
   const q = new URLSearchParams(location.hash.split('?')[1] || '').get('q');
@@ -1489,6 +1498,7 @@ async function vEdit(id, at) {
     const title = $('#et').value.trim() || (eb.innerText.trim().split('\n').find(x => x.trim() && !x.includes('(개역개정)')) || '').slice(0, 40);
     if (!html && !title) { toast('빈 메모는 저장하지 않습니다'); return; }
     Object.assign(m, { title, html, cats, anchors, ref: anchors[0] ? anchors[0].ref : '', updated: new Date().toISOString() });
+    if (m._bi) { ST.mo = ST.mo || {}; ST.mo[m.id] = { title, html, cats, updated: m.updated }; save(); LEAVE_GUARD = null; allMemos(); indexMemos(); go(`#/memo/${m.id}`, true); return; } // 내장 메모: 휴대폰 안에 따로 저장
     if (isNew) UM.push(m);
     await origSaveUM(); LEAVE_GUARD = null;
     if (isNew && at) { RETURN_AT = { day: at.split(':')[0].split('-p')[0], at }; history.back(); return; } // 읽다가 쓴 메모: 읽던 구절로
@@ -1534,7 +1544,7 @@ const FONT_CSS = { serif: 'var(--serif)', 'serif-light': '"BookSerifLight",serif
 function fontPick(btn, cb) {
   const p = $('#uipop'); if (!p.hidden) { closeOverlay(); return; }
   p.classList.remove('fromnav');
-  p.innerHTML = `<div class="lab">글꼴</div>${FONTS.map(([v, t]) => `<button class="srow" data-ff="${v}" style="font-family:${FONT_CSS[v]}">${t}</button>`).join('')}`;
+  p.innerHTML = `${PX}<div class="lab">글꼴</div>${FONTS.map(([v, t]) => `<button class="srow" data-ff="${v}" style="font-family:${FONT_CSS[v]}">${t}</button>`).join('')}`;
   const r = btn.getBoundingClientRect(); p.style.top = (r.bottom + 6) + 'px';
   openOverlay(p, () => { p.style.top = ''; });
   $$('[data-ff]', p).forEach(b => { b.onmousedown = e => e.preventDefault(); b.onclick = () => { closeOverlay(); cb(FONT_CSS[b.dataset.ff].replace('var(--serif)', getComputedStyle(document.body).getPropertyValue('--serif').trim() || 'serif')); }; });
@@ -1651,7 +1661,7 @@ function handlePaste(cd, eb) {
 }
 
 /* ---------- 접기 칸 ---------- */
-function htmlOf(m) { return m.builtin ? (MO[m.id] || m.html) : m.html; }
+function htmlOf(m) { return m.builtin ? ((ST.mo && ST.mo[m.id] && ST.mo[m.id].html) || MO[m.id] || m.html) : m.html; }
 const isHead = el => el && /^H[1-6]$/.test(el.tagName);
 function boxFolds(root) { // 접기 제목 + 그 아래 내용을 한 상자로 (붙여 넣은 글·예전 메모도 같은 모양으로)
   $$('h3.fold', root).forEach(h => {
@@ -1907,7 +1917,7 @@ function vSet() {
    <div class="body set">
     <button class="helpbig" data-go="#/help">${icon('help')}<b>사용법</b><span>읽기 · 표시·메모 · AI</span></button>
     <h3>보기</h3><div class="card">
-      <div class="lab">시작 화면</div><label class="chk"><input type="checkbox" id="intro" ${s.intro ? 'checked' : ''}> 앱을 열 때마다 시작 화면(로마서 16:25~27) 보기</label>
+      <div class="lab">시작 화면</div><label class="chk"><input type="checkbox" id="intro" ${s.intro ? 'checked' : ''}> 앱을 열 때마다 시작 화면(롬 16:25~27) 보기</label>
       <div class="lab">색 테마</div>${segs('theme', THEMES)}
       <div class="lab">읽는 방식·글자 크기·글꼴·줄 간격·여백은 책 속에서 화면 가운데를 눌러 바꾸세요. 날짜·메뉴 글씨는 아래 메뉴의 가가로 바꾸세요</div>
       </div>
@@ -2027,12 +2037,12 @@ function vHelp() {
     ${sec('뒤로 가기 · 아래 메뉴', `왼쪽 위 ${ic('back')}와 휴대폰 뒤로 가기는 바로 앞 화면으로 돌아갑니다. 첫 화면에서는 두 번 눌러야 앱이 닫힙니다. 아래 메뉴는 어느 화면에서나 홈 · 메모 · 되새김 · 글자(가가) · 사용법 및 설정, 다섯 칸이 같은 자리에 있습니다. 메모와 되새김 화면에서는 자기 자리가 정렬로 바뀌고, 지금 있는 화면의 아이콘은 진하게 보입니다. 찾기는 오른쪽 위 돋보기입니다. 책 속에서는 맨 위 [제n권 일자별 읽기]나 [제n권 주제별 읽기]를 누르면 그 홈으로, 집 아이콘을 누르면 홈으로 갑니다.`)}
     ${tier('② 표시 · 메모')}
     ${sec('구절 고르기 · 표시', `구절을 길게 누르면 그 낱말이 골라지고, 손을 떼지 않고 그대로 끌면 원하는 데까지 넓어집니다. 손을 떼면 아래에 메뉴가 뜹니다. 휴대폰의 복사·검색 메뉴는 뜨지 않습니다. 한 절 전체는 메뉴 오른쪽 위 [구절 전체]로 고릅니다. 다시 고르려면 다시 길게 누르면 됩니다. 윗줄은 ${ic('hl')} 형광펜, <b>U</b> 밑줄, <b>B</b> 진하게, ${ic('er')} 삭제, 아랫줄은 ${ic('memo')} 메모, ${ic('copy')} 복사, ${ic('share')} 공유입니다. 서식은 눌러도 메뉴가 닫히지 않아 연달아 고를 수 있습니다. 일자별에서 하든 주제별에서 하든 같은 자리에 남습니다.`, FIG.mark())}
-    ${sec('메모', `아래 메뉴 “메모”에서 분류별로 보고 “새 메모”로 씁니다. 구절 메뉴의 ${ic('memo')} 메모로 쓰면 그 구절에 걸리고, 구절 끝에 ${ic('memo')} 메모 아이콘이 붙습니다. 쓰기 화면은 제목부터 도구 두 줄까지가 고정되어 있습니다. 윗줄은 대제목 · 소제목 · 정렬 · 들여쓰기 · 목록 · 인용 · 구분선, 아랫줄은 굵게 · 밑줄 · 형광펜 · 글꼴 · 서식 삭제 · 그림 삽입 · 실행 취소 · 재실행입니다. 인용은 커서가 있는 문단을 인용 칸으로 만들고, 한 번 더 누르면 풀립니다. 제목 칸 오른쪽 ${ic('eye')} 미리보기를 누르면 완성된 모습이 보입니다. 접을 부분을 드래그해 고르고 위의 “접기”를 누르면 고른 부분의 첫 줄이 제목이 되고 나머지가 그 아래에 접힙니다. “접기 해제”는 고른 곳의 접기를 풀어 원래 글로 돌려놓습니다. 저장은 오른쪽 위 ${ic('check')}입니다. 저장된 메모에서 글을 끌어 고르면 서식 메뉴가 뜨고, 고른 글에 부분 메모도 붙일 수 있습니다. 메모에 표나 그림을 넣은 경우, 표는 카드로 접어 볼 수 있고 그림은 누르면 크게 보이며 두 손가락으로 확대할 수 있습니다. AI 답에 “요약”과 “상세”가 있으면 무엇을 넣을지 묻고 자동으로 접어 둡니다. 안이 빈 접기는 저장할 때 지워집니다. 저장된 메모의 ${ic('pen')} 수정 · ${ic('x')} 삭제로 고치거나 지웁니다. 메모 머리의 ${ic('flag')} 대표 구절, ${ic('link')} 관련 구절을 누르면 그 본문으로 가고 “메모로 돌아가기 ›”로 돌아옵니다.`, `<div class="hrow"><span>${ic('flag')}<b>대표 구절 · 요 3:16</b></span></div><div class="hrow"><span>${ic('link')}관련 구절</span><span class="pastef">롬 5:8</span><span class="pastef">요일 4:10</span></div>`)}
+    ${sec('메모', `아래 메뉴 “메모”에서 분류별로 보고 “새 메모”로 씁니다. 구절 메뉴의 ${ic('memo')} 메모로 쓰면 그 구절에 걸리고, 구절 끝에 ${ic('memo')} 메모 아이콘이 붙습니다. 쓰기 화면은 제목부터 도구 두 줄까지가 고정되어 있습니다. 윗줄은 대제목 · 소제목 · 정렬 · 들여쓰기 · 목록 · 인용 · 구분선, 아랫줄은 굵게 · 밑줄 · 형광펜 · 글꼴 · 서식 삭제 · 그림 삽입 · 실행 취소 · 재실행입니다. 인용은 커서가 있는 문단을 인용 칸으로 만들고, 한 번 더 누르면 풀립니다. 제목 칸 오른쪽 ${ic('eye')} 미리보기를 누르면 완성된 모습이 보입니다. 접을 부분을 드래그해 고르고 위의 “접기”를 누르면 고른 부분의 첫 줄이 제목이 되고 나머지가 그 아래에 접힙니다. “접기 해제”는 고른 곳의 접기를 풀어 원래 글로 돌려놓습니다. 저장은 오른쪽 위 ${ic('check')}입니다. 불러온 묵상&연구 메모도 ${ic('pen')} 수정으로 고칠 수 있고, 고친 내용은 이 휴대폰에 따로 보관됩니다. 저장된 메모에서 글을 끌어 고르면 서식 메뉴가 뜨고, 고른 글에 부분 메모도 붙일 수 있습니다. 메모에 표나 그림을 넣은 경우, 표는 카드로 접어 볼 수 있고 그림은 누르면 크게 보이며 두 손가락으로 확대할 수 있습니다. AI 답에 “요약”과 “상세”가 있으면 무엇을 넣을지 묻고 자동으로 접어 둡니다. 안이 빈 접기는 저장할 때 지워집니다. 저장된 메모의 ${ic('pen')} 수정 · ${ic('x')} 삭제로 고치거나 지웁니다. 메모 머리의 ${ic('flag')} 대표 구절, ${ic('link')} 관련 구절을 누르면 그 본문으로 가고 “메모로 돌아가기 ›”로 돌아옵니다.`, `<div class="hrow"><span>${ic('flag')}<b>대표 구절 · 요 3:16</b></span></div><div class="hrow"><span>${ic('link')}관련 구절</span><span class="pastef">롬 5:8</span><span class="pastef">요일 4:10</span></div>`)}
     ${sec('되새김 · 찾기', `${ic('bmk')} 되새김에는 형광펜 · 밑줄 · 진하게로 표시한 말씀이 모두 모입니다. 아래 메뉴의 정렬에서 성경 순서 · 책 순서 · 최신 순을 고르고, 오른쪽 위에서 권을 고릅니다. 오른쪽 위 ${ic('search')} 찾기에서 구절(예: 요 3:16)이나 낱말을 찾고, 범위를 전체 · 본문 · 메모 중에서 고릅니다. 결과는 본문과 메모로 나뉘어 보입니다.`, '<div class="hrow"><span class="pastef on">전체</span><span class="pastef">본문</span><span class="pastef">메모</span></div>')}
     ${ai ? tier('③ AI 활용') + sec('AI 활용 아이콘 세 가지', `구절을 고른 뒤 ${ic('ask')} AI와 간단 Q&A, ${ic('gem')} AI로 번역 비교를 누릅니다. 구절 표시 옆 ${ic('cmp')} 나침반은 AI로 배경·문맥 살피기입니다. 누르면 잠시 “붙여넣으세요” 안내가 뜬 뒤 연결한 AI 창이 열립니다. 구절과 요청은 이미 복사되어 있으니, Claude·Gemini는 입력칸을 길게 눌러 붙여넣기 한 뒤 보내면 됩니다. ChatGPT는 입력칸에 채워진 채 열리니 보내기만 누르면 됩니다. 본문 아래 펼친 개역한글 줄도 길게 눌러 고르면 AI에게 물을 수 있습니다. 최종 판단은 스스로 내리며 묵상하세요.`, FIG.ai()) + sec('AI 지침', '사용법 및 설정 › AI 활용에서 세 지침을 “AI에 저장”해 두어야 AI가 짧은 요청만으로 지침대로 답합니다. 지침은 “전문 보기”로 읽고 “수정”으로 바꿀 수 있습니다. 저장한 지침은 단추가 “✓ 저장 완료”로 바뀌고, 다시 누르면 새로 저장합니다. 붙여 넣을 때 AI가 “외부 지시문일 수 있다”는 안내를 띄울 수 있는데, 이 앱의 성경 읽기 지침이니 읽어 보고 보내시면 됩니다. 연결할 AI를 바꾸면 새 AI에 지침을 다시 저장해 주세요.') : ''}
     ${tier('더 알아두기')}
-    ${sec('다른 번역 보기', `구절 표시 옆 ${ic('dual', 'on')}를 누르면 그 본문 아래에만 번역 줄이 나타납니다. 개역한글(⌄)은 앱 안에서 각 구절 아래에 바로 보이고, ↗는 YouVersion(성경 앱)에서 그 본문을 엽니다. 펼친 개역한글 줄을 길게 눌러 고르면 AI와 간단 Q&A · AI로 번역 비교 · 복사 · 메모 메뉴가 뜹니다.`, `<div class="hrow ph"><b>창세기 6:5~7</b><span>${ai ? ic('cmp') : ''}${ic('dual', 'on')}</span></div><div class="hrow dvl"><span>개역한글 ⌄</span><span>·</span><span>ESV ↗</span><span>|</span><span>새번역 ↗</span><span>·</span><span>NIV ↗</span></div>`)}
-    ${sec('더 깊고 넓게 읽기', '어떤 날은 본문 끝에 “더 깊고 넓게 읽기” 칸이 있습니다. 누르면 그날 말씀과 이어지는 긴 본문이 펼쳐집니다. 읽기 완료와는 따로입니다.', `<div class="hrow deepf"><span>더 깊고 넓게 읽기 · 창 7</span><span>⌄</span></div>`)}
+    ${sec('다른 번역 보기', `구절 표시 옆 ${ic('dual', 'on')}를 누르면 그 본문 아래에만 번역 줄이 나타납니다. 개역한글(⌄)은 앱 안에서 각 구절 아래에 바로 보이고, ↗는 YouVersion(성경 앱)에서 그 본문을 엽니다. ESV · 새번역 · AMP(Amplified Bible, 괄호 속 풀이로 낱말의 뜻을 넓혀 보여 주는 영어 번역)를 열 수 있습니다. 펼친 개역한글 줄을 길게 눌러 고르면 AI와 간단 Q&A · AI로 번역 비교 · 복사 · 메모 메뉴가 뜹니다.`, `<div class="hrow ph"><b>창세기 6:5~7</b><span>${ai ? ic('cmp') : ''}${ic('dual', 'on')}</span></div><div class="hrow dvl"><span>개역한글 ⌄</span><span>·</span><span>ESV ↗</span><span>|</span><span>새번역 ↗</span><span>·</span><span>NIV ↗</span></div>`)}
+    ${sec('더 깊고 넓게 읽기', '어떤 날은 읽기 완료 아래에 “더 깊고 넓게 읽기” 칸이 있습니다. 누르면 그날 말씀과 이어지는 긴 본문이 펼쳐집니다. 읽기 완료와는 따로입니다.', `<div class="hrow deepf"><span>더 깊고 넓게 읽기 · 창 7</span><span>⌄</span></div>`)}
     ${sec('매일 알림 · 백업', `사용법 및 설정 › 매일 알림에서 캘린더에 "${NOTIFY_TITLE}" 반복 일정을 넣습니다. 알림의 링크를 누르면 그날 말씀으로 바로 갑니다. 기록은 이 휴대폰 안에만 있으니 사용법 및 설정 › 메모·기록에서 백업 파일을 내보내 보관해 두세요.`)}
     ${sec('구글 검색 막대가 메뉴를 가릴 때', '구절을 고를 때 화면 아래에 구글 검색 막대(“탭하여 검색”)가 먼저 뜨면, 크롬에서 그 기능을 끄면 됩니다. 크롬 버전에 따라 위치가 조금 다르고, Google 서비스에 없으면 “개인정보 보호 및 보안” 아래쪽에 있습니다.', `<div class="hrow path">크롬 ⋮ › 설정 › Google 서비스 › <b>탭하여 검색</b> 끄기</div>`)}
    </div></div>`;

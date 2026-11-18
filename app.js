@@ -1,6 +1,6 @@
 'use strict';
 /* 365 복음 묵상 — 2차 앱 (개인용·배포용 공통 코드, 데이터만 다름) */
-const VERSION = '0.9.20';
+const VERSION = '0.9.21';
 const APPNAME = '365 복음 묵상';
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
@@ -130,12 +130,16 @@ async function boot() {
     });
     const fromNotify = /[?&]n=1/.test(location.hash);
     route();
-    if ((!ST.set.setupDone || ST.set.intro) && !fromNotify) showIntro(); // 처음 열 때도 로마서 화면부터
+    if ((!ST.set.setupDone || ST.set.intro) && !fromNotify && !updReload()) showIntro(); // 처음 열 때도 로마서 화면부터
     bootDone();
     packCheck(); setTimeout(backupNag, 2500);
     newYearCheck();
     if (ST.set.setupDone && ST.seenVer !== VERSION) { const n = Object.values(D.extra).reduce((a, x) => a + x.length, 0); if (ST.seenVer && n) setTimeout(() => toast(`새로 더해진 말씀이 있습니다 · 더 깊고 넓게 읽기 ${n}곳`, 4200), 1500); ST.seenVer = VERSION; save(); }
-    if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+    if ('serviceWorker' in navigator && location.protocol === 'https:') { // 새 버전을 받으면 그 자리에서 한 번 새로 고침
+      const had = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.addEventListener('controllerchange', () => { if (!had) return; try { if (sessionStorage.getItem('m365-upd')) return; sessionStorage.setItem('m365-upd', '1'); } catch (e) { return; } location.reload(); });
+      navigator.serviceWorker.register('sw.js').then(r => r.update()).catch(() => {});
+    }
   } catch (e) {
     bootDone();
     $('#app').innerHTML = `<div class="body"><div class="empty">앱 자료를 불러오지 못했습니다.<br>인터넷에 연결된 상태에서 한 번 다시 열어 주세요.<br><small>${esc(e.message)}</small></div></div>`;
@@ -309,6 +313,7 @@ function bootDone() { // 휴대폰 첫 화면(남색) → 앱: 다른 색이 끼
   requestAnimationFrame(() => { bt.classList.add('out'); setTimeout(() => bt.remove(), intro ? 50 : 450); });
   if (intro) bt.style.transition = 'none';
 }
+function updReload() { try { if (sessionStorage.getItem('m365-upd') === '1') { sessionStorage.setItem('m365-upd', '2'); return true; } } catch (e) {} return false; }
 function introRecent() { try { return Date.now() - (+sessionStorage.getItem('m365-intro') || 0) < 5 * 60e3; } catch (e) { return false; } }
 function showIntro() {
   const b = $('#introbox');
@@ -2058,7 +2063,7 @@ function vSet() {
       <div class="lab">연결할 AI</div>${segs('ai', AI_CHOICES)}
       ${s.ai === 'none' ? '<div class="small">AI 활용 아이콘이 모두 숨겨져 있습니다.</div>' : `<div class="small">AI를 바꾸었다면, 새 AI에는 지침이 없으니 아래 세 지침을 다시 “AI에 저장”해 주세요. AI의 기억 기능(메모리)이 켜져 있어야 다음 대화에서도 기억합니다.</div><div id="gcs">${guideCards()}</div>`}</div>
     <h3>앱 정보</h3><div class="card small">
-      <span id="ver">${APPNAME}</span>${D.memos.length ? ` · 개인 메모 ${D.memos.length}편` : ''}<br>
+      <span id="ver">${APPNAME}</span>${D.memos.length ? ` · 개인 메모 ${D.memos.length}편` : ''} <span class="verno">· 버전 ${VERSION}</span><br>
       성경 본문: ${esc(D.st.translation || '개역개정 4판')}. ${esc(D.st.copyright || '')}<br>
       본문 출처: 『365일 성경 묵상』 제1·2·3권</div>
    </div>${nav('set')}</div>`;

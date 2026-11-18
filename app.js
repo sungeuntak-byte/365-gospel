@@ -1,6 +1,6 @@
 'use strict';
 /* 365 복음 묵상 — 2차 앱 (개인용·배포용 공통 코드, 데이터만 다름) */
-const VERSION = '0.9.18';
+const VERSION = '0.9.19';
 const APPNAME = '365 복음 묵상';
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
@@ -911,7 +911,7 @@ function keepVisible(rect) { // 고른 글이 메뉴에 가리지 않게: 위쪽
 }
 let ovJustClosed = 0;
 function onDocDown(e) {
-  if (sheetOpen() && !e.target.closest('#sheet')) { hideSheet(); ovJustClosed = Date.now(); }
+  if (sheetOpen() && !e.target.closest('#sheet,#modal')) { const f = $('#sheet')._apply; $('#sheet')._apply = null; hideSheet(); ovJustClosed = Date.now(); f && f(); }
   if (OV && (OV.el.id === 'rpanel' || OV.el.id === 'uipop') && !OV.el.contains(e.target) && !e.target.closest('[data-act=ui],[data-act=sort],[data-cmd=font]')) { closeOverlay(); ovJustClosed = Date.now(); }
   if (MM_HELD && !e.target.closest('#mmenu')) hideMemoMenu();
 }
@@ -1326,8 +1326,18 @@ function vMemoList() {
   $$('[data-cat]').forEach(b => b.onclick = () => { mOpen[b.dataset.cat] = !mOpen[b.dataset.cat]; const y = scrollY; vMemoList(); scrollTo(0, y); });
   if ($('#addcat')) $('#addcat').onclick = () => addCat(vMemoList);
 }
-function addCat(after) {
-  const n = (prompt('새 분류 이름') || '').trim();
+function askText(title, ph, ok) { // 앱 안의 이름 입력 창
+  return new Promise(res => {
+    const md = $('#modal');
+    md.innerHTML = `<div class="card ask"><b>${esc(title)}</b><input class="field" id="askv" placeholder="${esc(ph)}" maxlength="20"><div class="row" style="justify-content:flex-end;gap:8px"><button class="btn" data-a="x">취소</button><button class="btn dark" data-a="ok">${esc(ok)}</button></div></div>`;
+    md.hidden = false; const inp = $('#askv', md); setTimeout(() => inp.focus(), 50);
+    const done = v => { md.hidden = true; md.innerHTML = ''; res(v); };
+    md.onclick = e => { const b = e.target.closest('[data-a]'); if (b) return done(b.dataset.a === 'ok' ? inp.value.trim() : ''); if (e.target === md) done(''); };
+    inp.onkeydown = e => { if (e.key === 'Enter') done(inp.value.trim()); };
+  });
+}
+async function addCat(after) {
+  const n = smartQ(await askText('새 분류 추가', '분류 이름', '추가'));
   if (!n) return;
   if (catList().includes(n) || n === '미분류') { toast('이미 있는 분류입니다'); return; }
   ST.cats.push(n); save(); after && after();
@@ -1375,11 +1385,13 @@ function catPicker(m, after) {
     showSheet();
     $$('[data-c]', sh).forEach(b => b.onclick = () => { const c = b.dataset.c; sel = sel.includes(c) ? sel.filter(x => x !== c) : sel.concat(c); draw(); });
     $('[data-add]', sh).onclick = () => addCat(draw);
-    $('#cok', sh).onclick = async () => {
+    const apply = async () => {
       if (m.builtin) { ST.mcat[m.id] = sel; save(); }
       else { m.cats = sel; m.updated = new Date().toISOString(); await saveUM(); }
-      hideSheet(); after && after();
+      after && after();
     };
+    sh._apply = apply;
+    $('#cok', sh).onclick = () => { sh._apply = null; hideSheet(); apply(); };
   };
   draw();
 }
@@ -1399,11 +1411,12 @@ function memoEnhance(m) {
   });
   applyFolds(m);
   $$('img', mb).forEach(img => { img.onclick = e => { e.stopPropagation(); imgView(img.src); }; img.oncontextmenu = e => e.preventDefault(); });
-  if (!mb._tap) {
-    mb._tap = 1;
-    mb.addEventListener('click', e => {
+  const bm = mb.closest('.body.memo') || mb;
+  if (!bm._tap) {
+    bm._tap = 1;
+    bm.addEventListener('click', e => {
       if (hasSel() || MM_HELD || !$('#mmenu').hidden || Date.now() - lastMemoSel < 900) return;
-      if (e.target.closest('.fold,a,img,button,sup,summary,.tcard,.pnote')) return;
+      if (e.target.closest('.fold,a,img,button,input,sup,summary,.tcard,.pnote,.repbox,.relbox,.seg,.fall,.tag')) return;
       const x = e.clientX / innerWidth; if (x < .2 || x > .8) return;
       if (Date.now() - ovJustClosed < 500) return; // 가운데를 다시 누르면 닫힘
       readPanel(null, false, true);
@@ -1584,7 +1597,8 @@ catPicker = function (m, after) {
     showSheet();
     $$('[data-c]', sh).forEach(b => b.onclick = () => { const c = b.dataset.c; sel = sel.includes(c) ? sel.filter(x => x !== c) : sel.concat(c); draw(); });
     $('[data-add]', sh).onclick = () => addCat(draw);
-    $('#cok', sh).onclick = () => { hideSheet(); catPickerTemp && catPickerTemp(sel); };
+    sh._apply = () => { catPickerTemp && catPickerTemp(sel); };
+    $('#cok', sh).onclick = () => { sh._apply = null; hideSheet(); catPickerTemp && catPickerTemp(sel); };
   };
   draw();
 };
@@ -1695,6 +1709,7 @@ function applyFolds(m) {
   const mb = $('#mb'); if (!mb) return;
   $$(':scope > p', mb).forEach(p => { if (/^(요약|상세|자세히 살펴보기|더 알아보기)$/.test(p.textContent.replace(/[\s*:：]/g, ' ').trim())) p.classList.add('mlabel'); });
   boxFolds(mb); $$('.fbox', mb).forEach(foldMark); foldAllBar();
+  requestAnimationFrame(() => $$('.fbox > h3.fold', mb).forEach(fitTitle));
   const fun = $('#fun'); if (fun) fun.hidden = true;
   if (!mb._fold) { mb._fold = 1; mb.addEventListener('click', e => { const h = e.target.closest('.fbox > h3.fold'); if (h && !hasSel()) toggleFold(m, h); }); }
 }
@@ -1705,7 +1720,7 @@ function foldAllBar() { // 접기가 여럿이면 본문 위 오른쪽에 「모
   if (boxes.length < 2) { if (bar) bar.remove(); return; }
   if (!bar) { bar = document.createElement('div'); bar.id = 'fall'; bar.className = 'fall'; mb.before(bar); bar.onclick = () => { const anyClosed = $$('.fbox', mb).some(b => !b.classList.contains('open')); $$('.fbox', mb).forEach(b => { b.classList.toggle('open', anyClosed); foldMark(b); }); foldAllBar(); }; }
   const anyClosed = boxes.some(b => !b.classList.contains('open'));
-  bar.innerHTML = `<button aria-label="${anyClosed ? '모두 펼치기' : '모두 접기'}">${icon(anyClosed ? 'expand' : 'collapse')}</button>`;
+  bar.innerHTML = `<button aria-label="${anyClosed ? '모두 펼치기' : '모두 접기'}">${icon(anyClosed ? 'chd' : 'chu')}</button>`;
 }
 /* 메모 쪽 넘기기: 화면 한 쪽씩 (양 끝 톡·밀기), 가운데 톡은 메뉴 */
 let MPG = null;
@@ -1755,22 +1770,25 @@ function memoPager() { // 쪽 넘기기: 잘리는 줄은 다음 쪽 첫 줄로,
     if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.3) return go(page + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
     if (Math.abs(dy) > 45 && Math.abs(dy) > Math.abs(dx) * 1.3) return go(page + (dy < 0 ? 1 : -1), dy < 0 ? 1 : -1);
     if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && dt < 350) {
-      if (e.target.closest('button,a,img,summary,.fold,.tcard,input,.mhbox')) return;
-      const x = e.clientX / innerWidth; if (x < .2) go(page - 1, -1); else if (x > .8) go(page + 1, 1);
+      if (e.target.closest('a,input,.seg,.tag,.fall,.relbox button,#rmore,.mhbox [data-go]')) return;
+      const x = e.clientX / innerWidth; if (x < .2) { eat = Date.now(); go(page - 1, -1); } else if (x > .8) { eat = Date.now(); go(page + 1, 1); }
     }
   };
-  body.addEventListener('pointerdown', down); body.addEventListener('pointerup', up);
+  let eat = 0; const eatClick = e => { if (Date.now() - eat < 450) { e.stopPropagation(); e.preventDefault(); } };
+  body.addEventListener('pointerdown', down); body.addEventListener('pointerup', up); body.addEventListener('click', eatClick, true);
   let rt = 0; const ro = new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { const S = P[page]; window.scrollTo(0, 0); build(); page = Math.max(0, P.findIndex((x, i) => x <= S + 2 && (i === P.length - 1 || P[i + 1] > S + 2))); place(); }, 80); });
   ro.observe(body);
-  MPG = { off: () => { body.removeEventListener('pointerdown', down); body.removeEventListener('pointerup', up); ro.disconnect(); band.remove(); mask.remove(); document.documentElement.classList.remove('mpage'); } };
+  MPG = { off: () => { body.removeEventListener('pointerdown', down); body.removeEventListener('pointerup', up); body.removeEventListener('click', eatClick, true); ro.disconnect(); band.remove(); mask.remove(); document.documentElement.classList.remove('mpage'); } };
 }
 /* 메모 제목: 양쪽 맞춤, 단어는 자르지 않되 줄 간격이 크게 벌어지면 그 제목만 잘림 허용 */
 function fitTitle(h) {
-  if (!h) return; h.style.wordBreak = 'keep-all'; h.style.textAlign = 'left';
-  const r = document.createRange(); r.selectNodeContents(h); const rs = [...r.getClientRects()], W = h.clientWidth, fs = parseFloat(getComputedStyle(h).fontSize);
-  const rows = {}; rs.forEach(q => { const k = Math.round(q.top / 4); rows[k] = rows[k] ? [Math.min(rows[k][0], q.left), Math.max(rows[k][1], q.right)] : [q.left, q.right]; });
-  const ks = Object.keys(rows).sort((a, b) => a - b), left = h.getBoundingClientRect().left;
-  const slack = ks.slice(0, -1).map(k => W - (rows[k][1] - left)); if (slack.some(x => x > fs * 1.6)) h.style.wordBreak = 'break-all';
+  if (!h || !h.offsetWidth) return; h.style.wordBreak = 'keep-all'; h.style.textAlign = 'left'; h.style.textAlignLast = '';
+  const cs = getComputedStyle(h), fs = parseFloat(cs.fontSize), hr = h.getBoundingClientRect();
+  const L = hr.left + parseFloat(cs.paddingLeft), W = h.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const rows = {}, w = document.createTreeWalker(h, NodeFilter.SHOW_TEXT), r = document.createRange(); let n;
+  while ((n = w.nextNode())) { if (n.parentElement.closest('.fx')) continue; r.selectNodeContents(n); for (const q of r.getClientRects()) { const k = Math.round(q.top / 4); rows[k] = Math.max(rows[k] || 0, q.right); } }
+  const ks = Object.keys(rows).sort((a, b) => a - b);
+  if (ks.slice(0, -1).some(k => W - (rows[k] - L) > fs * 1.6)) h.style.wordBreak = 'break-all';
   h.style.textAlign = 'justify'; h.style.textAlignLast = 'left';
 }
 /* 따옴표: 곧은 따옴표(' ")를 둥근 따옴표로 (화면 전체, 쓰는 칸 제외 · 저장할 때 메모도) */

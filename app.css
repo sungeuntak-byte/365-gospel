@@ -1181,3 +1181,12 @@ html.mpage .body.memo{padding-bottom:100vh}
 .mpmask{position:fixed;left:0;right:0;z-index:5;background:var(--page);pointer-events:none}
 .memo .mbody .fbox>h3.fold,.memo .mbody .fbox.open>h3.fold{font-family:"BookSansLight",var(--sans);font-size:.98em;letter-spacing:-.02em}
 .memo>h1{hyphens:none}
+
+/* ===== 9차-20: 가안 색(#3d4552) — 원본 보기 · 접기 제목 · 모두 펼치기 ===== */
+.memo #ov button:not(.on){color:#3d4552;font-weight:700}
+.memo .mbody .fbox>h3.fold,.memo .mbody .fbox.open>h3.fold{font-family:var(--sans);font-weight:400;color:#3d4552;font-size:.98em;letter-spacing:-.02em}
+.fall button{color:#3d4552}
+.fall svg.i{width:19px;height:19px}
+.modal .card.ask{text-align:left}
+.modal .card.ask b{font-size:16px}
+.modal .card.ask .field{font-size:16px}

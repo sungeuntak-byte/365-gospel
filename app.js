@@ -1,6 +1,6 @@
 'use strict';
 /* 365 복음 묵상 — 2차 앱 (개인용·배포용 공통 코드, 데이터만 다름) */
-const VERSION = '0.9.17';
+const VERSION = '0.9.18';
 const APPNAME = '365 복음 묵상';
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
@@ -305,6 +305,7 @@ function ghostOut(el) { // 닫히는 판: 복제본이 부드럽게 사라짐
 function bootDone() { // 휴대폰 첫 화면(남색) → 앱: 다른 색이 끼지 않게, 남색 막을 부드럽게 걷음
   const bt = document.getElementById('boot'); if (!bt) return;
   const intro = !$('#introbox').hidden;
+  document.documentElement.classList.add('booted');
   requestAnimationFrame(() => { bt.classList.add('out'); setTimeout(() => bt.remove(), intro ? 50 : 450); });
   if (intro) bt.style.transition = 'none';
 }
@@ -342,7 +343,7 @@ function route() {
   if (OV) { const o = OV; OV = null; o.el.hidden = true; if (o.onClose) o.onClose(); }
   hideSheet();
   if (pager) { pager.destroy(); pager = null; }
-  memoPagerOff();
+  memoPagerOff(); document.documentElement.classList.remove('edlock');
   const h = location.hash.replace(/^#\/?/, '');
   const [path, qs] = h.split('?');
   const seg = path.split('/'), q0 = new URLSearchParams(qs || '');
@@ -1357,7 +1358,7 @@ async function vMemo(id) {
   $$('[data-pick]').forEach(b => b.onclick = () => catPicker(m, () => vMemo(id)));
   bindMemoHead(m);
   if (!onlyOrig) { applyFolds(m); bindMemoMenu(m); }
-  setTimeout(memoPager, 50);
+  fitTitle($('.memo > h1')); setTimeout(memoPager, 50);
   const text = () => `${m.title || ''}\n${(m.anchors || []).map(a => a.ref).join(', ')}\n\n${$('#mb').innerText}`.trim();
   $('#mcopy').onclick = () => { copy(text()); toast('메모를 복사했습니다'); };
   $('#mshare').onclick = () => share(text());
@@ -1368,7 +1369,7 @@ function catPicker(m, after) {
   let sel = catsOf(m).slice();
   const draw = () => {
     const sh = $('#sheet');
-    sh.innerHTML = `<div class="what">분류 고르기 (여러 개 가능 · 처음 고른 것이 주 분류)</div>
+    sh.innerHTML = `<div class="what cent">분류 선택 (여러 개 가능 · 처음 고른 것이 주 분류)</div>
       <div class="catchips">${catList().map(c => `<button class="${sel.includes(c) ? 'on' : ''}" data-c="${esc(c)}">${sel.includes(c) ? `<b>${sel.indexOf(c) + 1}</b> ` : ''}${esc(c)}</button>`).join('')}<button data-add>＋ 분류 추가</button></div>
       <div style="text-align:center"><button class="btn dark" id="cok">확인</button></div>`;
     showSheet();
@@ -1445,7 +1446,8 @@ async function vEdit(id, at) {
   const q = new URLSearchParams(location.hash.split('?')[1] || '').get('q');
   if (isNew && at) { const [pid, v] = at.split(':'), day = pid.split('-p')[0], d = D.days[day], p = d.pp[+pid.split('-p')[1] - 1]; anchors = [{ day, v: +v, ref: `${p.abbr} ${p.ch}:${v}` }]; }
   const quote = isNew && anchors[0] ? (() => { const a = anchors[0], pid = `${a.day}-p${findPidIdx(a.day, a.v)}`; const t = q || vtext(pid, a.v); return `<blockquote class="vquote">${esc(q ? `“${t}”` : t)}<br><small>${esc(a.ref)} (개역개정)</small></blockquote><p><br></p>`; })() : '';
-  $('#app').innerHTML = `<div class="screen">${bar(isNew ? '새 메모' : '메모 수정', 'back', { save: true })}
+  document.documentElement.classList.add('edlock');
+  $('#app').innerHTML = `<div class="screen edscr">${bar(isNew ? '새 메모' : '메모 수정', 'back', { save: true })}
     <div class="body memo edit">
       ${anchors.length ? `<div class="anch">${anchors.map(a => `<span class="achip">${esc(a.ref)} · ${locLabel(a.day)}</span>`).join('')}</div>` : ''}
       <div class="efix" id="efix"><div class="row ettl"><input class="field ttl" id="et" placeholder="제목" value="${esc(m.title)}"><button class="pvb" id="pvb" aria-label="미리보기">${icon('eye')}</button></div>
@@ -1510,8 +1512,9 @@ async function vEdit(id, at) {
   };
   $('#es').onclick = async () => {
     if (PV) setPreview(false);
+    smartText(eb, true);
     const html = dropEmptyFolds(cleanHTML(eb.innerHTML)).trim();
-    const title = $('#et').value.trim() || (eb.innerText.trim().split('\n').find(x => x.trim() && !x.includes('(개역개정)')) || '').slice(0, 40);
+    const title = smartQ($('#et').value.trim()) || (eb.innerText.trim().split('\n').find(x => x.trim() && !x.includes('(개역개정)')) || '').slice(0, 40);
     if (!html && !title) { toast('빈 메모는 저장하지 않습니다'); return; }
     Object.assign(m, { title, html, cats, anchors, ref: anchors[0] ? anchors[0].ref : '', updated: new Date().toISOString() });
     if (m._bi) { ST.mo = ST.mo || {}; ST.mo[m.id] = { title, html, cats, updated: m.updated }; save(); LEAVE_GUARD = null; allMemos(); indexMemos(); go(`#/memo/${m.id}`, true); return; } // 내장 메모: 휴대폰 안에 따로 저장
@@ -1575,7 +1578,7 @@ catPicker = function (m, after) {
   let sel = (m.cats || []).slice();
   const draw = () => {
     const sh = $('#sheet');
-    sh.innerHTML = `<div class="what">분류 고르기 (여러 개 가능 · 처음 고른 것이 주 분류)</div>
+    sh.innerHTML = `<div class="what cent">분류 선택 (여러 개 가능 · 처음 고른 것이 주 분류)</div>
       <div class="catchips">${catList().map(c => `<button class="${sel.includes(c) ? 'on' : ''}" data-c="${esc(c)}">${sel.includes(c) ? `<b>${sel.indexOf(c) + 1}</b> ` : ''}${esc(c)}</button>`).join('')}<button data-add>＋ 분류 추가</button></div>
       <div style="text-align:center"><button class="btn dark" id="cok">확인</button></div>`;
     showSheet();
@@ -1707,22 +1710,48 @@ function foldAllBar() { // 접기가 여럿이면 본문 위 오른쪽에 「모
 /* 메모 쪽 넘기기: 화면 한 쪽씩 (양 끝 톡·밀기), 가운데 톡은 메뉴 */
 let MPG = null;
 function memoPagerOff() { if (!MPG) return; MPG.off(); MPG = null; }
-function memoPager() {
+function memoPager() { // 쪽 넘기기: 잘리는 줄은 다음 쪽 첫 줄로, 위 여백, 쪽수는 아래 빈 띠
   memoPagerOff();
-  const on = (ST.set.mmode || 'scroll') === 'page';
-  document.documentElement.classList.toggle('mpage', on);
-  const body = $('#app .body.memo'); if (!on || !body) { document.documentElement.classList.remove('mpage'); return; }
-  const ind = document.createElement('div'); ind.className = 'mpg'; document.body.appendChild(ind);
-  const geo = () => { const bar = $('.bar'), nav = $('.nav'), t = bar ? bar.getBoundingClientRect().bottom : 0, b = nav ? nav.getBoundingClientRect().top : innerHeight, mb = $('#mb'), lh = mb ? parseFloat(getComputedStyle(mb).lineHeight) || 28 : 28; const step = Math.max(160, b - t - lh * 1.3), max = Math.max(0, document.documentElement.scrollHeight - innerHeight); return { step, max, count: max > 2 ? Math.ceil(max / step) + 1 : 1 }; };
-  let page = 0;
-  const draw = () => { const g = geo(), nv = $('.nav'); if (nv) ind.style.bottom = (innerHeight - nv.getBoundingClientRect().top + 8) + 'px'; page = Math.min(page, g.count - 1); ind.textContent = `${page + 1} / ${g.count}`; ind.hidden = g.count < 2; };
-  const go = (p, dir) => { const g = geo(); p = Math.max(0, Math.min(g.count - 1, p)); if (p === page) return; page = p; window.scrollTo(0, Math.min(p * g.step, g.max)); body.classList.remove('sl-next', 'sl-prev'); void body.offsetWidth; body.classList.add(dir > 0 ? 'sl-next' : 'sl-prev'); draw(); };
-  window.scrollTo(0, 0); draw();
+  const body = $('#app .body.memo'), on = (ST.set.mmode || 'scroll') === 'page' && !!body;
+  document.documentElement.classList.toggle('mpage', on); if (!on) return;
+  const GAP = 14, BAND = 34;
+  const band = document.createElement('div'); band.className = 'mpband'; band.innerHTML = '<span class="mpg"></span>';
+  const mask = document.createElement('div'); mask.className = 'mpmask';
+  document.body.append(band, mask);
+  const view = () => { const bar = $('.bar'), nav = $('.nav'); return { t: bar ? bar.getBoundingClientRect().bottom : 0, b: nav ? nav.getBoundingClientRect().top : innerHeight }; };
+  const lines = () => {
+    const out = [], Y = scrollY, w = document.createTreeWalker(body, NodeFilter.SHOW_TEXT), r = document.createRange(); let n;
+    while ((n = w.nextNode())) { if (!n.data.trim() || n.parentElement.closest('[hidden],.fx')) continue; r.selectNodeContents(n); for (const q of r.getClientRects()) if (q.height > 0) out.push([q.top + Y, q.bottom + Y]); }
+    $$('img,hr,button,.seg', body).forEach(e => { const q = e.getBoundingClientRect(); if (q.height > 0 && !e.closest('[hidden]')) out.push([q.top + Y, q.bottom + Y]); });
+    $$('.fbox,.repbox,.relbox,.tcard', body).forEach(e => { const q = e.getBoundingClientRect(); if (q.height > 0) out.push([q.top + Y - 2, q.top + Y + 6]); });
+    return out;
+  };
+  let P = [0], C = [], page = 0;
+  const build = () => {
+    const v = view(), L = lines(), avail = v.b - BAND - v.t - GAP; P = [0]; C = [];
+    for (let k = 0; k < 400; k++) {
+      const S = P[k], cut = S + v.b - BAND, rest = L.filter(x => x[1] > cut + .5);
+      if (!rest.length) { C.push(null); break; }
+      let nt = Math.min(...rest.map(x => x[0])), Sn = nt - v.t - GAP;
+      if (Sn < S + 40) { Sn = S + avail; nt = null; }
+      C.push(nt); P.push(Sn);
+    }
+  };
+  const place = () => {
+    const v = view(), S = P[page], nt = C[page];
+    window.scrollTo(0, S);
+    const top = nt == null ? v.b - BAND : Math.min(v.b - BAND, nt - S);
+    Object.assign(band.style, { top: top + 'px', height: Math.max(BAND, v.b - top) + 'px' });
+    Object.assign(mask.style, { top: v.t + 'px', height: (page ? GAP : 0) + 'px' });
+    const g = $('.mpg', band); g.textContent = `${page + 1} / ${P.length}`; g.hidden = P.length < 2;
+  };
+  const go = (k, dir) => { k = Math.max(0, Math.min(P.length - 1, k)); if (k === page) return; page = k; body.classList.remove('sl-next', 'sl-prev'); void body.offsetWidth; body.classList.add(dir > 0 ? 'sl-next' : 'sl-prev'); place(); };
+  window.scrollTo(0, 0); build(); place();
   let sx = null, sy = 0, st = 0;
   const down = e => { if (e.button > 0) return; sx = e.clientX; sy = e.clientY; st = Date.now(); };
   const up = e => {
     if (sx == null) return; const dx = e.clientX - sx, dy = e.clientY - sy, dt = Date.now() - st; sx = null;
-    if (hasSel() || MM_HELD || (typeof sheetOpen === 'function' && sheetOpen()) || Date.now() - lastMemoSel < 900 || Date.now() - ovJustClosed < 500 || dt > 700) return;
+    if (hasSel() || MM_HELD || sheetOpen() || Date.now() - lastMemoSel < 900 || Date.now() - ovJustClosed < 500 || dt > 700) return;
     if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.3) return go(page + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
     if (Math.abs(dy) > 45 && Math.abs(dy) > Math.abs(dx) * 1.3) return go(page + (dy < 0 ? 1 : -1), dy < 0 ? 1 : -1);
     if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && dt < 350) {
@@ -1731,9 +1760,30 @@ function memoPager() {
     }
   };
   body.addEventListener('pointerdown', down); body.addEventListener('pointerup', up);
-  const ro = new ResizeObserver(() => { const g = geo(); window.scrollTo(0, Math.min(page * g.step, g.max)); draw(); }); ro.observe(body);
-  MPG = { off: () => { body.removeEventListener('pointerdown', down); body.removeEventListener('pointerup', up); ro.disconnect(); ind.remove(); document.documentElement.classList.remove('mpage'); } };
+  let rt = 0; const ro = new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { const S = P[page]; window.scrollTo(0, 0); build(); page = Math.max(0, P.findIndex((x, i) => x <= S + 2 && (i === P.length - 1 || P[i + 1] > S + 2))); place(); }, 80); });
+  ro.observe(body);
+  MPG = { off: () => { body.removeEventListener('pointerdown', down); body.removeEventListener('pointerup', up); ro.disconnect(); band.remove(); mask.remove(); document.documentElement.classList.remove('mpage'); } };
 }
+/* 메모 제목: 양쪽 맞춤, 단어는 자르지 않되 줄 간격이 크게 벌어지면 그 제목만 잘림 허용 */
+function fitTitle(h) {
+  if (!h) return; h.style.wordBreak = 'keep-all'; h.style.textAlign = 'left';
+  const r = document.createRange(); r.selectNodeContents(h); const rs = [...r.getClientRects()], W = h.clientWidth, fs = parseFloat(getComputedStyle(h).fontSize);
+  const rows = {}; rs.forEach(q => { const k = Math.round(q.top / 4); rows[k] = rows[k] ? [Math.min(rows[k][0], q.left), Math.max(rows[k][1], q.right)] : [q.left, q.right]; });
+  const ks = Object.keys(rows).sort((a, b) => a - b), left = h.getBoundingClientRect().left;
+  const slack = ks.slice(0, -1).map(k => W - (rows[k][1] - left)); if (slack.some(x => x > fs * 1.6)) h.style.wordBreak = 'break-all';
+  h.style.textAlign = 'justify'; h.style.textAlignLast = 'left';
+}
+/* 따옴표: 곧은 따옴표(' ")를 둥근 따옴표로 (화면 전체, 쓰는 칸 제외 · 저장할 때 메모도) */
+function smartQ(t, p = ' ') { let o = ''; for (const ch of t) { if (ch === '"' || ch === "'") { const open = !p || /[\s(\[{「『<—–·:,~]/.test(p); o += ch === '"' ? (open ? '“' : '”') : (open ? '‘' : '’'); } else o += ch; p = ch; } return o; }
+function prevCh(n) { let x = n; while (x) { if (x.previousSibling) { x = x.previousSibling; const t = x.textContent || ''; if (t.length) return t.slice(-1); continue; } x = x.parentElement; if (!x || !/^(B|STRONG|I|EM|U|SPAN|A|MARK|SMALL|SUP|SUB|FONT|S|DEL|INS)$/.test(x.tagName)) return ' '; } return ' '; }
+function smartText(root, force) {
+  if (!root) return; if (root.nodeType === 3) root = root.parentElement; if (!root) return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => /['"]/.test(n.data) && (force || !n.parentElement.closest('script,style,textarea,input,code,pre,[contenteditable="true"]')) ? 1 : 3 });
+  const ns = []; let n; while ((n = w.nextNode())) ns.push(n);
+  ns.forEach(n => { const v = smartQ(n.data, prevCh(n)); if (v !== n.data) n.data = v; });
+}
+new MutationObserver(ms => { for (const m of ms) for (const nd of m.addedNodes) if (nd.nodeType === 1 || nd.nodeType === 3) smartText(nd); }).observe(document.documentElement, { childList: true, subtree: true });
+
 function blockOf(root, node) { let n = node.nodeType === 1 ? node : node.parentElement; while (n && n.parentElement !== root) { if (n.tagName === 'LI') return n; n = n.parentElement; } return n; }
 function blockHeading(root, range, tag, cls) { // 고른 글자만 제목으로 (문단 중간이면 앞·뒤를 나눔), 같은 제목이면 풀기
   const blk = blockOf(root, range.startContainer); if (!blk || blk === root) return false;

@@ -1162,3 +1162,22 @@ html.mpage .body.memo.sl-prev{animation:slprev .3s cubic-bezier(.22,.7,.25,1)}
 #sheet .catchips{gap:9px}
 #sheet .catchips button{font-size:15px;padding:8px 15px;border-radius:20px}
 .ettl .ttl::placeholder{color:#c9c1b5;font-weight:400}
+
+/* ===== 9차-19: 쓰기 화면 한 화면 고정 · 분류 선택 창 · 쪽 넘기기 띠 · 접기 글꼴 · 메모 제목 ===== */
+html.booted{background:var(--page)}
+html.edlock,html.edlock body{overflow:hidden;overscroll-behavior:none}
+.screen.edscr{height:100vh;height:100dvh;min-height:0;overflow:hidden}
+.screen.edscr .body.edit{flex:1 1 auto;min-height:0;overflow:hidden;padding-bottom:calc(10px + var(--safe-b));gap:8px}
+.screen.edscr .edit .efix{position:static!important}
+.screen.edscr #eb.mbody.ed{flex:1 1 auto;min-height:0!important;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.screen.edscr .body.edit:focus-within>.small{display:none}
+.screen.edscr .anch{flex:none}
+#sheet .what.cent{text-align:center;font-weight:700;color:var(--ink,#2c2a27);font-size:14.5px}
+#sheet .catchips{justify-content:center}
+html.mpage .body.memo{padding-bottom:100vh}
+.mpg{position:static;transform:none;background:transparent;border:0;padding:0}
+.mpband{position:fixed;left:0;right:0;z-index:5;background:var(--page);display:flex;align-items:flex-end;justify-content:center;padding-bottom:7px;pointer-events:none}
+.mpband .mpg{font-family:var(--sans);font-size:12px;color:#8a8175;background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:11px;padding:1px 10px}
+.mpmask{position:fixed;left:0;right:0;z-index:5;background:var(--page);pointer-events:none}
+.memo .mbody .fbox>h3.fold,.memo .mbody .fbox.open>h3.fold{font-family:"BookSansLight",var(--sans);font-size:.98em;letter-spacing:-.02em}
+.memo>h1{hyphens:none}

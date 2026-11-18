@@ -1,6 +1,6 @@
 'use strict';
 /* 365 복음 묵상 — 2차 앱 (개인용·배포용 공통 코드, 데이터만 다름) */
-const VERSION = '0.9.19';
+const VERSION = '0.9.20';
 const APPNAME = '365 복음 묵상';
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
@@ -1416,7 +1416,7 @@ function memoEnhance(m) {
     bm._tap = 1;
     bm.addEventListener('click', e => {
       if (hasSel() || MM_HELD || !$('#mmenu').hidden || Date.now() - lastMemoSel < 900) return;
-      if (e.target.closest('.fold,a,img,button,input,sup,summary,.tcard,.pnote,.repbox,.relbox,.seg,.fall,.tag')) return;
+      if (e.target.closest('.fold,a,img,button,input,sup,summary,.tcard,.pnote,[data-go],.seg,.fall,.tag')) return;
       const x = e.clientX / innerWidth; if (x < .2 || x > .8) return;
       if (Date.now() - ovJustClosed < 500) return; // 가운데를 다시 누르면 닫힘
       readPanel(null, false, true);

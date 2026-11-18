@@ -1,6 +1,6 @@
 'use strict';
 /* 365 복음 묵상 — 2차 앱 (개인용·배포용 공통 코드, 데이터만 다름) */
-const VERSION = '0.9.22';
+const VERSION = '0.9.23';
 const APPNAME = '365 복음 묵상';
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
@@ -817,7 +817,7 @@ function readPanel(day, topic, memo) {
     return '';
   };
   const draw = () => {
-    p.innerHTML = `<div class="rptabs">${tabs.map(([k, t]) => `<button data-tab="${k}" class="${RP_TAB === k ? 'on' : ''}">${t}</button>`).join('')}<button class="rpx" data-rp="close" aria-label="닫기">${icon('check')}</button></div>
+    p.innerHTML = `${memo ? `<div class="rpact"><button data-ma="edit">${icon('pen')}수정</button><button data-ma="copy">${icon('copy')}복사</button><button data-ma="share">${icon('share')}공유</button><button data-ma="dl">${icon('down')}다운로드</button></div>` : ''}<div class="rptabs">${tabs.map(([k, t]) => `<button data-tab="${k}" class="${RP_TAB === k ? 'on' : ''}">${t}</button>`).join('')}<button class="rpx" data-rp="close" aria-label="닫기">${icon('check')}</button></div>
       ${RP_TAB ? `<div class="rpsub">${sub(RP_TAB)}</div>` : ''}`;
   };
   draw(); openOverlay(p);
@@ -826,6 +826,7 @@ function readPanel(day, topic, memo) {
     const b = e.target.closest('button'); if (!b) return;
     const s = ST.set;
     if (b.dataset.rp === 'close') { closeOverlay(); return; }
+    if (b.dataset.ma) { const a = b.dataset.ma; closeOverlay(); setTimeout(() => { if (a === 'edit') { const x = $('[data-go^="#/edit/"]'); if (x) go(x.dataset.go); } else if (a === 'copy') $('#mcopy') && $('#mcopy').click(); else if (a === 'share') $('#mshare') && $('#mshare').click(); else if (a === 'dl') memoDownload(); }, 60); return; }
     if (b.dataset.tab) { RP_TAB = RP_TAB === b.dataset.tab ? '' : b.dataset.tab; draw(); return; }
     if (b.dataset.fs) { s.fs = Math.max(14, Math.min(30, s.fs + +b.dataset.fs)); }
     else if (b.dataset.lh) { s.lh = +b.dataset.lh; }
@@ -917,7 +918,7 @@ function keepVisible(rect) { // 고른 글이 메뉴에 가리지 않게: 위쪽
 let ovJustClosed = 0;
 function onDocDown(e) {
   if (sheetOpen() && !e.target.closest('#sheet,#modal')) { const f = $('#sheet')._apply; $('#sheet')._apply = null; hideSheet(); ovJustClosed = Date.now(); f && f(); }
-  if (OV && (OV.el.id === 'rpanel' || OV.el.id === 'uipop') && !OV.el.contains(e.target) && !e.target.closest('[data-act=ui],[data-act=sort],[data-cmd=font]')) { closeOverlay(); ovJustClosed = Date.now(); }
+  if (OV && (OV.el.id === 'rpanel' || OV.el.id === 'uipop') && !OV.el.contains(e.target) && !e.target.closest('[data-act=ui],[data-act=sort],[data-cmd=font],[data-cmd=align],[data-cmd=indent]')) { closeOverlay(); ovJustClosed = Date.now(); }
   if (MM_HELD && !e.target.closest('#mmenu')) hideMemoMenu();
 }
 function offsetIn(t, node, off) { const r = document.createRange(); r.setStart(t, 0); r.setEnd(node, off); return r.toString().length; }
@@ -1349,6 +1350,7 @@ async function addCat(after) {
 }
 
 /* ---------- 메모 보기 ---------- */
+let MEMO_DL = null; function memoDownload() { MEMO_DL && MEMO_DL(); }
 async function vMemo(id) {
   const m = memoById(id);
   if (!m) return go('#/memos', true);
@@ -1376,6 +1378,7 @@ async function vMemo(id) {
   fitTitle($('.memo > h1')); setTimeout(memoPager, 50);
   const text = () => `${m.title || ''}\n${(m.anchors || []).map(a => a.ref).join(', ')}\n\n${$('#mb').innerText}`.trim();
   $('#mcopy').onclick = () => { copy(text()); toast('메모를 복사했습니다'); };
+  MEMO_DL = () => { const t = text(), a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([t], { type: 'text/plain;charset=utf-8' })); a.download = `${(m.title || '메모').replace(/[\\/:*?"<>|]/g, '').slice(0, 40)}.txt`; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); toast('메모를 글 파일로 내려받았습니다'); };
   $('#mshare').onclick = () => share(text());
   if ($('#mdel')) $('#mdel').onclick = async () => { if (!confirm('이 메모를 삭제할까요? 되돌릴 수 없습니다.')) return; UM = UM.filter(x => x.id !== m.id); await saveUM(); go('#/memos', true); };
   memoEnhance(m);
@@ -1475,7 +1478,7 @@ async function vEdit(id, at) {
       <div class="efix" id="efix"><div class="row ettl"><input class="field ttl" id="et" placeholder="제목" value="${esc(m.title)}"><button class="pvb" id="pvb" aria-label="미리보기">${icon('eye')}</button></div>
       <div class="catline" id="ec"></div>
       <div class="etb" id="tb">
-        <div class="er">${ETB([['h2', '<span class="hg2 big"></span>', '대제목'], ['h3', '<span class="hg2"></span>', '소제목'], ['align', icon('alignl'), '정렬'], ['indent', icon('indent'), '들여쓰기'], ['ul', icon('list'), '목록'], ['quote', icon('quote'), '인용'], ['hr', icon('hr'), '구분선']])}</div>
+        <div class="er">${ETB([['h2', '<span class="hg2 big"></span>', '대제목'], ['h3', '<span class="hg2"></span>', '소제목'], ['align', icon('alignl'), '정렬'], ['indent', icon('indent'), '들여쓰기'], ['ul', icon('list'), '목록'], ['quote', icon('quote'), '인용'], ['hr', icon('hr'), '구분선'], ['kbd', '<span class="kbi">⌨</span>', '입력']])}</div>
         <div class="er">${ETB([['bold', '<b class="tg">B</b>', '굵게'], ['under', '<u class="tg">U</u>', '밑줄'], ['hilite', icon('hl'), '형광펜'], ['font', '<b class="tg">T</b>', '글꼴'], ['clear', icon('er'), '서식 삭제'], ['img', icon('image'), '그림 삽입'], ['undo', icon('undo'), '실행 취소'], ['redo', icon('redo'), '재실행']])}</div>
       </div>
       <div class="pvbar" id="pvbar" hidden><span class="lab">접을 부분을 드래그해 고르세요</span><button data-pf="on" disabled>${icon('chd')}접기</button><button data-pf="off" disabled>${icon('x')}접기 해제</button></div></div>
@@ -1488,9 +1491,13 @@ async function vEdit(id, at) {
   const origSaveUM = saveUM;
   catPickerTemp = sel => { cats = sel; drawCats(); };
   const eb = $('#eb');
+  const kb = on => { eb.setAttribute('inputmode', on ? 'text' : 'none'); $('.body.edit').classList.toggle('kbon', on); const k = $('[data-cmd=kbd]'); if (k) k.classList.toggle('on', on); };
+  kb(isNew);
   $('#tb').onmousedown = e => e.preventDefault();
   $('#tb').onclick = e => {
-    const b = e.target.closest('[data-cmd]'); if (!b) return; eb.focus();
+    const b = e.target.closest('[data-cmd]'); if (!b) return;
+    if (b.dataset.cmd === 'kbd') { const on = eb.getAttribute('inputmode') === 'none'; kb(on); eb.blur(); if (on) setTimeout(() => eb.focus(), 30); return; }
+    eb.focus();
     const c = b.dataset.cmd, blk = () => { const r = getSelection().rangeCount && getSelection().getRangeAt(0); return r && eb.contains(r.startContainer) ? blockOf(eb, r.startContainer) : null; };
     document.execCommand('styleWithCSS', false, c === 'hilite');
     if (c === 'bold') document.execCommand('bold');
@@ -1500,8 +1507,8 @@ async function vEdit(id, at) {
     else if (c === 'hr') document.execCommand('insertHorizontalRule');
     else if (c === 'undo' || c === 'redo') document.execCommand(c);
     else if (c === 'clear') { document.execCommand('removeFormat'); document.execCommand('formatBlock', false, 'p'); }
-    else if (c === 'align') { const x = blk(); if (x && x !== eb) x.style.textAlign = ({ '': 'center', left: 'center', center: 'right' })[x.style.textAlign || ''] || ''; }
-    else if (c === 'indent') { const x = blk(); if (x && x !== eb) x.classList.toggle('ind'); }
+    else if (c === 'align') { const x = blk(); if (x && x !== eb) optPick(b, '정렬', [['', '양쪽 (기본)'], ['left', '왼쪽'], ['center', '가운데'], ['right', '오른쪽']], x.style.textAlign || '', v => { x.style.textAlign = v; }); }
+    else if (c === 'indent') { const x = blk(); if (x && x !== eb) { const lv = x.classList.contains('ind3') ? 3 : x.classList.contains('ind2') ? 2 : x.classList.contains('ind') ? 1 : 0; optPick(b, `들여쓰기 · 지금 ${lv}단계`, [['+', '들여쓰기 (한 단계 안으로)'], ['-', '내어쓰기 (한 단계 밖으로)']], '', v => { const n = Math.max(0, Math.min(3, lv + (v === '+' ? 1 : -1))); x.classList.remove('ind', 'ind2', 'ind3'); if (n) x.classList.add(n === 1 ? 'ind' : 'ind' + n); toast(n ? `들여쓰기 ${n}단계` : '들여쓰기 없음'); }); } }
     else if (c === 'quote') { const x = blk(); document.execCommand('formatBlock', false, x && x.tagName === 'BLOCKQUOTE' ? 'p' : 'blockquote'); }
     else if (c === 'h2' || c === 'h3') { const x = blk(); document.execCommand('formatBlock', false, x && x.tagName === c.toUpperCase() ? 'p' : c); }
     else if (c === 'img') $('#eimg').click();
@@ -1582,6 +1589,14 @@ function dropEmptyFolds(html) { // 빈 접기는 저장하지 않음 + 모두 �
   return d.innerHTML;
 }
 const FONT_CSS = { serif: 'var(--serif)', 'serif-light': '"BookSerifLight",serif', 'sans-kr': '"BookSans",sans-serif', 'sans-light': '"BookSansLight",sans-serif', sys: 'system-ui,sans-serif' };
+function optPick(btn, title, opts, cur, cb) { // 쓰기 도구의 고르는 작은 창 (정렬·들여쓰기)
+  const p = $('#uipop'); if (!p.hidden) { closeOverlay(); return; }
+  p.classList.remove('fromnav');
+  p.innerHTML = `${PX}<div class="lab">${esc(title)}</div>${opts.map(([v, t]) => `<button class="srow ${v === cur && cur !== null ? 'on' : ''}" data-ov="${v}">${v === cur ? '✓ ' : ''}${esc(t)}</button>`).join('')}`;
+  const r = btn.getBoundingClientRect(); p.style.top = (r.bottom + 6) + 'px';
+  openOverlay(p, () => { p.style.top = ''; });
+  $$('[data-ov]', p).forEach(b => { b.onmousedown = e => e.preventDefault(); b.onclick = () => { closeOverlay(); cb(b.dataset.ov); }; });
+}
 function fontPick(btn, cb) {
   const p = $('#uipop'); if (!p.hidden) { closeOverlay(); return; }
   p.classList.remove('fromnav');
@@ -1849,7 +1864,7 @@ function blocksIn(mb, r) { const a = blockOf(mb, r.startContainer), b = blockOf(
 function memoMenuHTML() {
   const B = (k, inner, lab, on) => `<button data-mo="${k}" class="${on ? 'on' : ''}" aria-label="${lab}">${inner}</button>`;
   const can = MM && MM.undo.length, canR = MM && MM.redo.length;
-  return `<div class="mr r7">${B('hl', icon('hl') + '<i class="hlbar"></i>', '하이라이트')}${B('b', '<b class="bg">B</b>', '굵게', document.queryCommandState && false)}${B('u', '<u class="bg">U</u>', '밑줄')}${B('fold', '<span class="fg">⌄</span><small>접기</small>', '접기')}${B('note', icon('note'), '부분 메모')}${B('copy', icon('copy'), '복사')}${B('share', icon('sharedown'), '공유·다운로드')}</div>
+  return `<div class="mr r5">${B('hl', icon('hl') + '<i class="hlbar"></i>', '하이라이트')}${B('b', '<b class="bg">B</b>', '굵게', document.queryCommandState && false)}${B('u', '<u class="bg">U</u>', '밑줄')}${B('fold', '<span class="fg">⌄</span><small>접기</small>', '접기')}${B('copy', icon('copy'), '복사')}</div>
     <div class="mr r8">${B('h2', '<span class="hg big"></span>', '대제목')}${B('h3', '<span class="hg"></span>', '소제목')}${B('align', icon('alignc'), '정렬')}${B('font', '<span class="aa">T</span>', '글꼴')}${B('indent', icon('indent'), '들여쓰기')}${B('clear', icon('er'), '서식 삭제')}${B('undo', icon('undo'), '실행 취소').replace('<button', `<button ${can ? '' : 'disabled'}`)}${B('redo', icon('redo'), '재실행').replace('<button', `<button ${canR ? '' : 'disabled'}`)}</div>
     <div class="mpanel" id="mpanel" hidden></div>`;
 }
@@ -2169,7 +2184,7 @@ function vHelp() {
     ${sec('뒤로 가기 · 아래 메뉴', `왼쪽 위 ${ic('back')}와 휴대폰 뒤로 가기는 바로 앞 화면으로 돌아갑니다. 첫 화면에서는 두 번 눌러야 앱이 닫힙니다. 아래 메뉴는 어느 화면에서나 홈 · 메모 · 되새김 · 글자(가가) · 사용법 및 설정, 다섯 칸이 같은 자리에 있습니다. 메모와 되새김 화면에서는 자기 자리가 정렬로 바뀌고, 지금 있는 화면의 아이콘은 진하게 보입니다. 찾기는 오른쪽 위 돋보기입니다. 책 속에서는 맨 위 [제n권 일자별 읽기]나 [제n권 주제별 읽기]를 누르면 그 홈으로, 집 아이콘을 누르면 홈으로 갑니다.`)}
     ${tier('② 표시 · 메모')}
     ${sec('구절 고르기 · 표시', `구절을 길게 누르면 그 낱말이 골라지고, 손을 떼지 않고 그대로 끌면 원하는 데까지 넓어집니다. 손을 떼면 아래에 메뉴가 뜹니다. 휴대폰의 복사·검색 메뉴는 뜨지 않습니다. 한 절 전체는 메뉴 오른쪽 위 [구절 전체]로 고릅니다. 다시 고르려면 다시 길게 누르면 됩니다. 윗줄은 ${ic('hl')} 형광펜, <b>U</b> 밑줄, <b>B</b> 진하게, ${ic('er')} 삭제, 아랫줄은 ${ic('memo')} 메모, ${ic('copy')} 복사, ${ic('share')} 공유입니다. 서식은 눌러도 메뉴가 닫히지 않아 연달아 고를 수 있습니다. 일자별에서 하든 주제별에서 하든 같은 자리에 남습니다.`, FIG.mark())}
-    ${sec('메모', `아래 메뉴 “메모”에서 분류별로 보고 “새 메모”로 씁니다. 구절 메뉴의 ${ic('memo')} 메모로 쓰면 그 구절에 걸리고, 구절 끝에 ${ic('memo')} 메모 아이콘이 붙습니다. 쓰기 화면은 제목부터 도구 두 줄까지가 고정되어 있습니다. 윗줄은 대제목 · 소제목 · 정렬 · 들여쓰기 · 목록 · 인용 · 구분선, 아랫줄은 굵게 · 밑줄 · 형광펜 · 글꼴 · 서식 삭제 · 그림 삽입 · 실행 취소 · 재실행입니다. 인용은 커서가 있는 문단을 인용 칸으로 만들고, 한 번 더 누르면 풀립니다. 제목 칸 오른쪽 ${ic('eye')} 미리보기를 누르면 완성된 모습이 보입니다. 접을 부분을 드래그해 고르고 위의 “접기”를 누르면 고른 부분의 첫 줄이 제목이 되고 나머지가 그 아래에 접힙니다. “접기 해제”는 고른 곳의 접기를 풀어 원래 글로 돌려놓습니다. 저장은 오른쪽 위 ${ic('check')}입니다. 불러온 묵상&연구 메모도 ${ic('pen')} 수정으로 고칠 수 있고, 고친 내용은 이 휴대폰에 따로 보관됩니다. 저장된 메모에서 글을 끌어 고르면 서식 메뉴가 뜨고, 고른 글에 부분 메모도 붙일 수 있습니다. 메모에 표나 그림을 넣은 경우, 표는 줄마다 접기 상자로 바뀌어 첫 칸이 제목이 되고 나머지 칸은 펼치면 보이며, 그림은 누르면 크게 보이며 두 손가락으로 확대할 수 있습니다. 크게 본 사진은 오른쪽 위 “공유”와 “다운로드”로 보내거나 휴대폰에 저장할 수 있습니다. 표나 글을 사진으로만 담았던 묵상&연구 메모는 글로 옮겨 항목마다 접어 두었고(폰 한 화면이 넘는 경우), “원본 보기”를 누르면 원래 사진을 그대로 볼 수 있습니다. AI 답에 “요약”과 “상세”가 있으면 무엇을 넣을지 묻고 자동으로 접어 둡니다. 저장된 메모의 접기는 상자를 누르면 그 상자 안에 내용이 펼쳐지고, 오른쪽 ⌄ ⌃ 아이콘으로 펼침·접힘이 보입니다. 접기가 여럿인 메모는 본문 위 오른쪽 아이콘으로 모두 펼치거나 모두 접습니다. 메모를 읽다 화면 가운데를 누르면 아래 메뉴의 “읽는 방식”에서 스크롤과 쪽 넘기기를 고를 수 있고(본문 읽기와 따로 기억합니다), 쪽 넘기기에서는 양 끝을 누르거나 밀어 넘깁니다. 쓰기 화면의 “분류” 줄을 누르면 분류를 고릅니다. 안이 빈 접기는 저장할 때 지워집니다. 저장된 메모의 ${ic('pen')} 수정 · ${ic('x')} 삭제로 고치거나 지웁니다. 메모 머리의 ${ic('flag')} 대표 구절, ${ic('link')} 관련 구절을 누르면 그 본문으로 가고 “메모로 돌아가기 ›”로 돌아옵니다.`, `<div class="hrow"><span>${ic('flag')}<b>대표 구절 · 요 3:16</b></span></div><div class="hrow"><span>${ic('link')}관련 구절</span><span class="pastef">롬 5:8</span><span class="pastef">요일 4:10</span></div>`)}
+    ${sec('메모', `아래 메뉴 “메모”에서 분류별로 보고 “새 메모”로 씁니다. 구절 메뉴의 ${ic('memo')} 메모로 쓰면 그 구절에 걸리고, 구절 끝에 ${ic('memo')} 메모 아이콘이 붙습니다. 쓰기 화면은 제목부터 도구 두 줄까지가 고정되어 있습니다. 윗줄은 대제목 · 소제목 · 정렬 · 들여쓰기 · 목록 · 인용 · 구분선, 아랫줄은 굵게 · 밑줄 · 형광펜 · 글꼴 · 서식 삭제 · 그림 삽입 · 실행 취소 · 재실행입니다. 인용은 커서가 있는 문단을 인용 칸으로 만들고, 한 번 더 누르면 풀립니다. 제목 칸 오른쪽 ${ic('eye')} 미리보기를 누르면 완성된 모습이 보입니다. 접을 부분을 드래그해 고르고 위의 “접기”를 누르면 고른 부분의 첫 줄이 제목이 되고 나머지가 그 아래에 접힙니다. “접기 해제”는 고른 곳의 접기를 풀어 원래 글로 돌려놓습니다. 저장은 오른쪽 위 ${ic('check')}입니다. 불러온 묵상&연구 메모도 ${ic('pen')} 수정으로 고칠 수 있고, 고친 내용은 이 휴대폰에 따로 보관됩니다. 저장된 메모에서 글을 끌어 고르면 서식 메뉴가 뜨고, 고른 글에 부분 메모도 붙일 수 있습니다. 메모에 표나 그림을 넣은 경우, 표는 줄마다 접기 상자로 바뀌어 첫 칸이 제목이 되고 나머지 칸은 펼치면 보이며, 그림은 누르면 크게 보이며 두 손가락으로 확대할 수 있습니다. 크게 본 사진은 오른쪽 위 “공유”와 “다운로드”로 보내거나 휴대폰에 저장할 수 있습니다. 표나 글을 사진으로만 담았던 묵상&연구 메모는 글로 옮겨 항목마다 접어 두었고(폰 한 화면이 넘는 경우), “원본 보기”를 누르면 원래 사진을 그대로 볼 수 있습니다. AI 답에 “요약”과 “상세”가 있으면 무엇을 넣을지 묻고 자동으로 접어 둡니다. 저장된 메모의 접기는 상자를 누르면 그 상자 안에 내용이 펼쳐지고, 오른쪽 ⌄ ⌃ 아이콘으로 펼침·접힘이 보입니다. 접기가 여럿인 메모는 본문 위 오른쪽 아이콘으로 모두 펼치거나 모두 접습니다. 메모를 읽다 화면 가운데를 누르면 아래 메뉴의 “읽는 방식”에서 스크롤과 쪽 넘기기를 고를 수 있고(본문 읽기와 따로 기억합니다), 쪽 넘기기에서는 양 끝을 누르거나 밀어 넘깁니다. 쓰기 화면의 “분류” 줄을 누르면 분류를 고릅니다. 안이 빈 접기는 저장할 때 지워집니다. 저장된 메모의 ${ic('pen')} 수정 · ${ic('x')} 삭제로 고치거나 지웁니다. 메모를 읽다 화면 가운데를 누르면 아래 메뉴 맨 위에 수정 · 복사 · 공유 · 다운로드(글 파일)가 있습니다. 수정 화면은 키보드 없이 열려 글을 고르고 서식만 바꿀 수 있고, 글을 칠 때는 도구 줄의 ⌨ 입력을 누릅니다(새 메모는 처음부터 입력 상태). 정렬과 들여쓰기는 누르면 고르는 작은 창이 뜨고, 들여쓴 문단은 쓰기 화면에서 왼쪽 세로줄로 단계가 보입니다. 메모 머리의 ${ic('flag')} 대표 구절, ${ic('link')} 관련 구절을 누르면 그 본문으로 가고 “메모로 돌아가기 ›”로 돌아옵니다.`, `<div class="hrow"><span>${ic('flag')}<b>대표 구절 · 요 3:16</b></span></div><div class="hrow"><span>${ic('link')}관련 구절</span><span class="pastef">롬 5:8</span><span class="pastef">요일 4:10</span></div>`)}
     ${sec('되새김 · 찾기', `${ic('bmk')} 되새김에는 형광펜 · 밑줄 · 진하게로 표시한 말씀이 모두 모입니다. 아래 메뉴의 정렬에서 성경 순서 · 책 순서 · 최신 순을 고르고, 오른쪽 위에서 권을 고릅니다. 오른쪽 위 ${ic('search')} 찾기에서 구절(예: 요 3:16)이나 낱말을 찾고, 범위를 전체 · 본문 · 메모 중에서 고릅니다. 결과는 본문과 메모로 나뉘어 보입니다.`, '<div class="hrow"><span class="pastef on">전체</span><span class="pastef">본문</span><span class="pastef">메모</span></div>')}
     ${ai ? tier('③ AI 활용') + sec('AI 활용 아이콘 세 가지', `구절을 고른 뒤 ${ic('ask')} AI와 간단 Q&A, ${ic('gem')} AI로 번역 비교를 누릅니다. 구절 표시 옆 ${ic('cmp')} 나침반은 AI로 배경·문맥 살피기입니다. 누르면 잠시 “붙여넣으세요” 안내가 뜬 뒤 연결한 AI 창이 열립니다. 구절과 요청은 이미 복사되어 있으니, Claude·Gemini는 입력칸을 길게 눌러 붙여넣기 한 뒤 보내면 됩니다. ChatGPT는 입력칸에 채워진 채 열리니 보내기만 누르면 됩니다. 본문 아래 펼친 개역한글 줄도 길게 눌러 고르면 AI에게 물을 수 있습니다. 최종 판단은 스스로 내리며 묵상하세요.`, FIG.ai()) + sec('AI 지침', '사용법 및 설정 › AI 활용에서 세 지침을 “AI에 저장”해 두어야 AI가 짧은 요청만으로 지침대로 답합니다. 지침은 “전문 보기”로 읽고 “수정”으로 바꿀 수 있습니다. 저장한 지침은 단추가 “✓ 저장 완료”로 바뀌고, 다시 누르면 새로 저장합니다. 붙여 넣을 때 AI가 “외부 지시문일 수 있다”는 안내를 띄울 수 있는데, 이 앱의 성경 읽기 지침이니 읽어 보고 보내시면 됩니다. 연결할 AI를 바꾸면 새 AI에 지침을 다시 저장해 주세요.') : ''}
     ${tier('더 알아두기')}

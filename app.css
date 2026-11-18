@@ -1204,3 +1204,20 @@ html.mpage .body.memo{padding-bottom:100vh}
 .memo .mbody .tfolds .tcell p{text-indent:0;margin:.15em 0}
 .memo .mbody .tfolds .tcell .vq,.memo .mbody .tfolds .tcell div.vq{font-size:.95em;color:#5d5850;margin:.3em 0 .2em;padding-left:.6em;border-left:2px solid #e3d6c3}
 .memo .mbody p.memo-sub+p.memo-sub{margin-top:-.5em}
+
+/* ===== 9차-24: 가운데 메뉴 메모 동작 · 고른 글 메뉴 5칸 · 쓰기 키보드/정렬/들여쓰기 ===== */
+.mmenu .r5{grid-template-columns:repeat(5,1fr)}
+.rpact{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:0 0 8px;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,.12)}
+.rpact button{display:flex;flex-direction:column;align-items:center;gap:3px;font-family:var(--sans);font-size:12px;color:inherit;padding:6px 0;border-radius:8px}
+.rpact svg.i{width:20px;height:20px}
+.etb .kbi{font-size:21px;line-height:1}
+.etb button.on{background:var(--sand-bg)}
+.body.edit.kbon .etb{flex-direction:row;overflow-x:auto;scrollbar-width:none}
+.body.edit.kbon .etb::-webkit-scrollbar{display:none}
+.body.edit.kbon .etb .er{display:flex;flex:none}
+.body.edit.kbon .etb button{width:50px;flex:none}
+.mbody .ind{padding-left:1.6em}.mbody .ind2{padding-left:3.2em}.mbody .ind3{padding-left:4.8em}
+.mbody.ed .ind,.mbody.ed .ind2,.mbody.ed .ind3{box-shadow:inset 3px 0 0 #dccbb2}
+.mbody.ed .ind2{background:linear-gradient(90deg,transparent 1.55em,#dccbb2 1.55em,#dccbb2 calc(1.55em + 3px),transparent calc(1.55em + 3px))}
+.mbody.ed .ind3{background:linear-gradient(90deg,transparent 1.55em,#dccbb2 1.55em,#dccbb2 calc(1.55em + 3px),transparent calc(1.55em + 3px),transparent 3.15em,#dccbb2 3.15em,#dccbb2 calc(3.15em + 3px),transparent calc(3.15em + 3px))}
+#uipop .srow.on{font-weight:700;color:var(--v1)}

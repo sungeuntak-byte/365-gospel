@@ -1134,3 +1134,31 @@ label.chk input[type=checkbox],.in-chk input[type=checkbox]{margin-top:calc((1.5
 .memo .mbody blockquote{font-size:.95em}
 .memo .mbody li{line-height:1.75}
 .memo .mbody ul li{text-align:justify;word-break:break-all}
+
+/* ===== 9차-18: 메모 크기 단계 · 접기 상자 · 모두 펼치기 · 메모 쪽 넘기기 · 쓰기 분류 줄 ===== */
+.memo .mbody h1{font-size:1.2em;font-weight:700}
+.memo .mbody h2{font-size:1.12em;font-weight:700}
+.memo .mbody h3:not(.fold),.memo .mbody h4{font-size:1.06em;font-weight:700}
+.memo .mbody p.memo-sub{font-size:.92em}
+.memo .mbody p.mlabel{font-size:.88em}
+.memo .mbody p.vq{font-size:.97em}
+.memo .mbody .fbox{border:1px solid #e3d6c3;border-radius:10px;background:#fff;margin:.7em 0;overflow:hidden}
+.memo .mbody .fbox>h3.fold,.memo .mbody .fbox.open>h3.fold{border:0!important;border-radius:0!important;margin:0!important;background:transparent;font-family:var(--sans);font-size:1.04em;font-weight:400;color:#2c2a27;line-height:1.55;text-align:justify;text-align-last:left;word-break:keep-all;padding:10px 44px 10px 12px!important}
+.memo .mbody .fbox>h3.fold *:not(.fx):not(svg):not(use){background:none!important;color:inherit!important;font-weight:inherit!important;font-style:normal!important;text-decoration:none!important}
+.memo .mbody .fbox>.fbody{padding:4px 12px 10px;border-top:1px dashed #ebe1d2}
+.mbody h3.fold .fx{right:12px;gap:0;color:#9a8a76}
+.mbody h3.fold .fx svg.i{width:19px;height:19px}
+.fall{display:flex;justify-content:flex-end;margin:0 0 -8px}
+.fall button{width:34px;height:30px;display:flex;align-items:center;justify-content:center;color:#8a7a68;border-radius:8px}
+.fall svg.i{width:20px;height:20px}
+html.mpage,html.mpage body{overflow:hidden;overscroll-behavior:none}
+html.mpage .body.memo.sl-next{animation:slnext .3s cubic-bezier(.22,.7,.25,1)}
+html.mpage .body.memo.sl-prev{animation:slprev .3s cubic-bezier(.22,.7,.25,1)}
+.mpg{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(74px + var(--safe-b));z-index:6;font-family:var(--sans);font-size:12px;color:#7d7468;background:rgba(255,255,255,.88);border:1px solid var(--line);border-radius:12px;padding:2px 10px;pointer-events:none}
+.ecat{display:flex;align-items:center;gap:8px;width:100%;min-height:40px;padding:5px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;text-align:left}
+.ecat .ecl{font-family:var(--sans);font-size:13px;color:var(--muted);flex:none}
+.ecat .ecv{flex:1;display:flex;flex-wrap:wrap;gap:5px}
+.ecat .ecg{font-family:var(--sans);font-size:13.5px;color:var(--copper);flex:none}
+#sheet .catchips{gap:9px}
+#sheet .catchips button{font-size:15px;padding:8px 15px;border-radius:20px}
+.ettl .ttl::placeholder{color:#c9c1b5;font-weight:400}

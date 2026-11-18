@@ -1,6 +1,6 @@
 'use strict';
 /* 365 복음 묵상 — 2차 앱 (개인용·배포용 공통 코드, 데이터만 다름) */
-const VERSION = '0.9.16';
+const VERSION = '0.9.17';
 const APPNAME = '365 복음 묵상';
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
@@ -60,7 +60,7 @@ function idbSet(k, v) { return new Promise(res => { if (!DB) return res(false); 
 function defaults() {
   return {
     v: 1,
-    set: { vol: 1, ai: 'claude', fs: 18, lh: 1.9, mode: 'page', font: 'serif', newYear: true, setupDone: false, year: new Date().getFullYear(), home: 'date', notifyTime: '06:00', intro: true, theme: 'calm', ui: 2, uiv: 2, pad: 1 },
+    set: { vol: 1, ai: 'claude', fs: 18, lh: 1.9, mode: 'page', mmode: 'scroll', font: 'serif', newYear: true, setupDone: false, year: new Date().getFullYear(), home: 'date', notifyTime: '06:00', intro: true, theme: 'calm', ui: 2, uiv: 2, pad: 1 },
     prog: { 1: { read: {}, hist: [] }, 2: { read: {}, hist: [] }, 3: { read: {}, hist: [] } },
     cnt: {}, recent: null, marks: [], bm: [], leap: null, lastBackup: null, tips: {},
     dy: {}, dyv: 2, cats: [], mcat: {}, guideSaved: {}, seenVer: '', fread: {}, mind: {}, foldPick: 'det', pm: null,
@@ -130,7 +130,7 @@ async function boot() {
     });
     const fromNotify = /[?&]n=1/.test(location.hash);
     route();
-    if ((!ST.set.setupDone || ST.set.intro) && !fromNotify && !introRecent()) showIntro(); // 처음 열 때도 로마서 화면부터
+    if ((!ST.set.setupDone || ST.set.intro) && !fromNotify) showIntro(); // 처음 열 때도 로마서 화면부터
     bootDone();
     packCheck(); setTimeout(backupNag, 2500);
     newYearCheck();
@@ -342,6 +342,7 @@ function route() {
   if (OV) { const o = OV; OV = null; o.el.hidden = true; if (o.onClose) o.onClose(); }
   hideSheet();
   if (pager) { pager.destroy(); pager = null; }
+  memoPagerOff();
   const h = location.hash.replace(/^#\/?/, '');
   const [path, qs] = h.split('?');
   const seg = path.split('/'), q0 = new URLSearchParams(qs || '');
@@ -799,10 +800,10 @@ let RP_TAB = '';
 function readPanel(day, topic, memo) {
   const p = $('#rpanel'); if (p.hidden) RP_TAB = ''; // 다시 열 때는 늘 같은 모습(탭 줄만)
   let tabs = [['mode', `<span class="rpi">${icon('book')}</span>읽는 방식`], ['fs', '<span class="rpi gg"><span class="a">가</span><span class="b">가</span></span>글자 크기'], ['font', '<span class="rpi aa">Aa</span>글꼴'], ['gap', `<span class="rpi">${icon('alignc')}</span>간격`], ['theme', '<span class="rpi dotc"></span>배경색']];
-  if (memo) { tabs = tabs.filter(t => t[0] !== 'mode' && t[0] !== 'font'); if (['mode', 'font'].includes(RP_TAB)) RP_TAB = ''; }
+  if (memo) { tabs = tabs.filter(t => t[0] !== 'font'); if (RP_TAB === 'font') RP_TAB = ''; }
   const sub = k => {
     const s = ST.set, seg = (key, arr) => `<div class="rseg">${arr.map(([v, t]) => `<button data-k="${key}" data-v="${v}" class="${String(s[key]) === String(v) ? 'on' : ''}"${key === 'font' ? ` data-f="${v}"` : ''}>${t}</button>`).join('')}</div>`;
-    if (k === 'mode') return seg('mode', [['scroll', '스크롤'], ['page', '쪽 넘기기']]);
+    if (k === 'mode') return memo ? seg('mmode', [['scroll', '스크롤'], ['page', '쪽 넘기기']]) : seg('mode', [['scroll', '스크롤'], ['page', '쪽 넘기기']]);
     if (k === 'fs') return `<div class="rstep"><button data-fs="-1"><span style="font-size:13px">가</span>−</button><b>${s.fs}</b><button data-fs="1"><span style="font-size:19px">가</span>+</button></div>`;
     if (k === 'font') return seg('font', FONTS.slice(0, 4));
     if (k === 'gap') return `<div class="rrow"><span class="rlab">줄 간격</span><div class="rseg">${LH_STEPS.map(([t, v]) => `<button data-lh="${v}" class="${Math.abs(s.lh - v) < .06 ? 'on' : ''}">${t}</button>`).join('')}</div></div><div class="rrow"><span class="rlab">여백</span>${seg('pad', PADS.map((x, i) => [i, x[1]]))}</div>`;
@@ -825,6 +826,7 @@ function readPanel(day, topic, memo) {
     else if (b.dataset.k) { s[b.dataset.k] = isNaN(+b.dataset.v) ? b.dataset.v : +b.dataset.v; }
     else return;
     save(); applyView(); draw();
+    if (b.dataset.k === 'mmode') { closeOverlay(); setTimeout(memoPager, 60); return; }
     if (b.dataset.k === 'mode') { const fl = $('#fl'); closeOverlay(); setTimeout(() => fl && fl._rerender && fl._rerender(), 60); return; }
     relayout();
   };
@@ -1351,10 +1353,11 @@ async function vMemo(id) {
         ${m.builtin ? '' : `<button class="quiet" id="mdel">${icon('x')}삭제</button>`}
       </div>
     </div>${nav('memo', { ctx: 'memo' })}</div>`;
-  if ($('#ov')) $('#ov').onclick = e => { const b = e.target.closest('button'); if (!b) return; $$('#ov button').forEach(x => x.classList.toggle('on', x === b)); $('#mb').innerHTML = b.dataset.v === 'o' ? m.orig : htmlOf(m); if (b.dataset.v !== 'o') applyFolds(m); memoEnhance(m); };
+  if ($('#ov')) $('#ov').onclick = e => { const b = e.target.closest('button'); if (!b) return; $$('#ov button').forEach(x => x.classList.toggle('on', x === b)); $('#mb').innerHTML = b.dataset.v === 'o' ? m.orig : htmlOf(m); if (b.dataset.v !== 'o') applyFolds(m); else { const f = $('#fall'); if (f) f.remove(); } memoEnhance(m); };
   $$('[data-pick]').forEach(b => b.onclick = () => catPicker(m, () => vMemo(id)));
   bindMemoHead(m);
   if (!onlyOrig) { applyFolds(m); bindMemoMenu(m); }
+  setTimeout(memoPager, 50);
   const text = () => `${m.title || ''}\n${(m.anchors || []).map(a => a.ref).join(', ')}\n\n${$('#mb').innerText}`.trim();
   $('#mcopy').onclick = () => { copy(text()); toast('메모를 복사했습니다'); };
   $('#mshare').onclick = () => share(text());
@@ -1445,7 +1448,7 @@ async function vEdit(id, at) {
   $('#app').innerHTML = `<div class="screen">${bar(isNew ? '새 메모' : '메모 수정', 'back', { save: true })}
     <div class="body memo edit">
       ${anchors.length ? `<div class="anch">${anchors.map(a => `<span class="achip">${esc(a.ref)} · ${locLabel(a.day)}</span>`).join('')}</div>` : ''}
-      <div class="efix" id="efix"><div class="row ettl"><input class="field ttl" id="et" placeholder="메모 제목" value="${esc(m.title)}"><button class="pvb" id="pvb" aria-label="미리보기">${icon('eye')}</button></div>
+      <div class="efix" id="efix"><div class="row ettl"><input class="field ttl" id="et" placeholder="제목" value="${esc(m.title)}"><button class="pvb" id="pvb" aria-label="미리보기">${icon('eye')}</button></div>
       <div class="catline" id="ec"></div>
       <div class="etb" id="tb">
         <div class="er">${ETB([['h2', '<span class="hg2 big"></span>', '대제목'], ['h3', '<span class="hg2"></span>', '소제목'], ['align', icon('alignl'), '정렬'], ['indent', icon('indent'), '들여쓰기'], ['ul', icon('list'), '목록'], ['quote', icon('quote'), '인용'], ['hr', icon('hr'), '구분선']])}</div>
@@ -1455,7 +1458,7 @@ async function vEdit(id, at) {
       <div class="mbody ed" id="eb" contenteditable="true" data-ph="여기에 쓰거나, AI의 답을 복사해 붙여 넣으세요.">${isNew ? quote : m.html}</div>
       <div class="small">AI 답을 붙여 넣으면 제목·굵게·인용·목록·표·그림을 최대한 그대로 살립니다. 답에 “요약”과 “상세”가 있으면 무엇을 넣을지 묻고 자동으로 접어 둡니다. 접기는 미리보기에서 접을 부분을 드래그해 정합니다. 저장은 오른쪽 위 ✓입니다.</div><input type="file" id="eimg" accept="image/*" hidden>
     </div></div>`;
-  const drawCats = () => { $('#ec').innerHTML = (cats.length ? cats.map(c => `<span class="tag cat">${esc(c)}</span>`).join('') : '<span class="tag cat un">미분류</span>') + ' <button class="lab" id="ecp">분류 고르기 ›</button>'; $('#ecp').onclick = () => catPicker({ id: m.id, cats, builtin: false, _tmp: true }, null); };
+  const drawCats = () => { $('#ec').innerHTML = `<button class="ecat" id="ecp"><span class="ecl">분류</span><span class="ecv">${cats.length ? cats.map(c => `<span class="tag cat">${esc(c)}</span>`).join('') : '<span class="tag cat un">미분류</span>'}</span><span class="ecg">고르기 ›</span></button>`; $('#ecp').onclick = () => catPicker({ id: m.id, cats, builtin: false, _tmp: true }, null); };
   drawCats();
   // 분류 고르기: 임시 객체로 받고 화면만 갱신
   const origSaveUM = saveUM;
@@ -1684,15 +1687,53 @@ function boxFolds(root) { // 접기 제목 + 그 아래 내용을 한 상자로 
     for (let n = box.nextElementSibling; n && !isHead(n) && !n.classList.contains('fbox');) { const nx = n.nextElementSibling; body.append(n); n = nx; }
   });
 }
-function foldMark(box) { const h = $(':scope > h3.fold', box); if (!h) return; let fx = $('.fx', h); if (!fx) { h.insertAdjacentHTML('beforeend', '<span class="fx gen"></span>'); fx = $('.fx', h); } const open = box.classList.contains('open'); fx.innerHTML = icon(open ? 'chu' : 'chd') + (open ? '접기' : '펼치기'); const b = $(':scope > .fbody', box); if (b) b.hidden = !open; }
+function foldMark(box) { const h = $(':scope > h3.fold', box); if (!h) return; let fx = $('.fx', h); if (!fx) { h.insertAdjacentHTML('beforeend', '<span class="fx gen"></span>'); fx = $('.fx', h); } const open = box.classList.contains('open'); fx.innerHTML = icon(open ? 'chu' : 'chd'); fx.setAttribute('aria-label', open ? '접기' : '펼치기'); const b = $(':scope > .fbody', box); if (b) b.hidden = !open; }
 function applyFolds(m) {
   const mb = $('#mb'); if (!mb) return;
   $$(':scope > p', mb).forEach(p => { if (/^(요약|상세|자세히 살펴보기|더 알아보기)$/.test(p.textContent.replace(/[\s*:：]/g, ' ').trim())) p.classList.add('mlabel'); });
-  boxFolds(mb); $$('.fbox', mb).forEach(foldMark);
+  boxFolds(mb); $$('.fbox', mb).forEach(foldMark); foldAllBar();
   const fun = $('#fun'); if (fun) fun.hidden = true;
   if (!mb._fold) { mb._fold = 1; mb.addEventListener('click', e => { const h = e.target.closest('.fbox > h3.fold'); if (h && !hasSel()) toggleFold(m, h); }); }
 }
-function toggleFold(m, h, force) { const box = h.closest('.fbox'); if (!box) return; box.classList.toggle('open', force != null ? force : !box.classList.contains('open')); foldMark(box); }
+function toggleFold(m, h, force) { const box = h.closest('.fbox'); if (!box) return; box.classList.toggle('open', force != null ? force : !box.classList.contains('open')); foldMark(box); foldAllBar(); }
+function foldAllBar() { // 접기가 여럿이면 본문 위 오른쪽에 「모두 펼치기 / 모두 접기」
+  const mb = $('#mb'); if (!mb || mb.classList.contains('ed')) return;
+  let bar = $('#fall'); const boxes = $$('.fbox', mb);
+  if (boxes.length < 2) { if (bar) bar.remove(); return; }
+  if (!bar) { bar = document.createElement('div'); bar.id = 'fall'; bar.className = 'fall'; mb.before(bar); bar.onclick = () => { const anyClosed = $$('.fbox', mb).some(b => !b.classList.contains('open')); $$('.fbox', mb).forEach(b => { b.classList.toggle('open', anyClosed); foldMark(b); }); foldAllBar(); }; }
+  const anyClosed = boxes.some(b => !b.classList.contains('open'));
+  bar.innerHTML = `<button aria-label="${anyClosed ? '모두 펼치기' : '모두 접기'}">${icon(anyClosed ? 'expand' : 'collapse')}</button>`;
+}
+/* 메모 쪽 넘기기: 화면 한 쪽씩 (양 끝 톡·밀기), 가운데 톡은 메뉴 */
+let MPG = null;
+function memoPagerOff() { if (!MPG) return; MPG.off(); MPG = null; }
+function memoPager() {
+  memoPagerOff();
+  const on = (ST.set.mmode || 'scroll') === 'page';
+  document.documentElement.classList.toggle('mpage', on);
+  const body = $('#app .body.memo'); if (!on || !body) { document.documentElement.classList.remove('mpage'); return; }
+  const ind = document.createElement('div'); ind.className = 'mpg'; document.body.appendChild(ind);
+  const geo = () => { const bar = $('.bar'), nav = $('.nav'), t = bar ? bar.getBoundingClientRect().bottom : 0, b = nav ? nav.getBoundingClientRect().top : innerHeight, mb = $('#mb'), lh = mb ? parseFloat(getComputedStyle(mb).lineHeight) || 28 : 28; const step = Math.max(160, b - t - lh * 1.3), max = Math.max(0, document.documentElement.scrollHeight - innerHeight); return { step, max, count: max > 2 ? Math.ceil(max / step) + 1 : 1 }; };
+  let page = 0;
+  const draw = () => { const g = geo(), nv = $('.nav'); if (nv) ind.style.bottom = (innerHeight - nv.getBoundingClientRect().top + 8) + 'px'; page = Math.min(page, g.count - 1); ind.textContent = `${page + 1} / ${g.count}`; ind.hidden = g.count < 2; };
+  const go = (p, dir) => { const g = geo(); p = Math.max(0, Math.min(g.count - 1, p)); if (p === page) return; page = p; window.scrollTo(0, Math.min(p * g.step, g.max)); body.classList.remove('sl-next', 'sl-prev'); void body.offsetWidth; body.classList.add(dir > 0 ? 'sl-next' : 'sl-prev'); draw(); };
+  window.scrollTo(0, 0); draw();
+  let sx = null, sy = 0, st = 0;
+  const down = e => { if (e.button > 0) return; sx = e.clientX; sy = e.clientY; st = Date.now(); };
+  const up = e => {
+    if (sx == null) return; const dx = e.clientX - sx, dy = e.clientY - sy, dt = Date.now() - st; sx = null;
+    if (hasSel() || MM_HELD || (typeof sheetOpen === 'function' && sheetOpen()) || Date.now() - lastMemoSel < 900 || Date.now() - ovJustClosed < 500 || dt > 700) return;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.3) return go(page + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
+    if (Math.abs(dy) > 45 && Math.abs(dy) > Math.abs(dx) * 1.3) return go(page + (dy < 0 ? 1 : -1), dy < 0 ? 1 : -1);
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && dt < 350) {
+      if (e.target.closest('button,a,img,summary,.fold,.tcard,input,.mhbox')) return;
+      const x = e.clientX / innerWidth; if (x < .2) go(page - 1, -1); else if (x > .8) go(page + 1, 1);
+    }
+  };
+  body.addEventListener('pointerdown', down); body.addEventListener('pointerup', up);
+  const ro = new ResizeObserver(() => { const g = geo(); window.scrollTo(0, Math.min(page * g.step, g.max)); draw(); }); ro.observe(body);
+  MPG = { off: () => { body.removeEventListener('pointerdown', down); body.removeEventListener('pointerup', up); ro.disconnect(); ind.remove(); document.documentElement.classList.remove('mpage'); } };
+}
 function blockOf(root, node) { let n = node.nodeType === 1 ? node : node.parentElement; while (n && n.parentElement !== root) { if (n.tagName === 'LI') return n; n = n.parentElement; } return n; }
 function blockHeading(root, range, tag, cls) { // 고른 글자만 제목으로 (문단 중간이면 앞·뒤를 나눔), 같은 제목이면 풀기
   const blk = blockOf(root, range.startContainer); if (!blk || blk === root) return false;
@@ -2050,7 +2091,7 @@ function vHelp() {
     ${sec('뒤로 가기 · 아래 메뉴', `왼쪽 위 ${ic('back')}와 휴대폰 뒤로 가기는 바로 앞 화면으로 돌아갑니다. 첫 화면에서는 두 번 눌러야 앱이 닫힙니다. 아래 메뉴는 어느 화면에서나 홈 · 메모 · 되새김 · 글자(가가) · 사용법 및 설정, 다섯 칸이 같은 자리에 있습니다. 메모와 되새김 화면에서는 자기 자리가 정렬로 바뀌고, 지금 있는 화면의 아이콘은 진하게 보입니다. 찾기는 오른쪽 위 돋보기입니다. 책 속에서는 맨 위 [제n권 일자별 읽기]나 [제n권 주제별 읽기]를 누르면 그 홈으로, 집 아이콘을 누르면 홈으로 갑니다.`)}
     ${tier('② 표시 · 메모')}
     ${sec('구절 고르기 · 표시', `구절을 길게 누르면 그 낱말이 골라지고, 손을 떼지 않고 그대로 끌면 원하는 데까지 넓어집니다. 손을 떼면 아래에 메뉴가 뜹니다. 휴대폰의 복사·검색 메뉴는 뜨지 않습니다. 한 절 전체는 메뉴 오른쪽 위 [구절 전체]로 고릅니다. 다시 고르려면 다시 길게 누르면 됩니다. 윗줄은 ${ic('hl')} 형광펜, <b>U</b> 밑줄, <b>B</b> 진하게, ${ic('er')} 삭제, 아랫줄은 ${ic('memo')} 메모, ${ic('copy')} 복사, ${ic('share')} 공유입니다. 서식은 눌러도 메뉴가 닫히지 않아 연달아 고를 수 있습니다. 일자별에서 하든 주제별에서 하든 같은 자리에 남습니다.`, FIG.mark())}
-    ${sec('메모', `아래 메뉴 “메모”에서 분류별로 보고 “새 메모”로 씁니다. 구절 메뉴의 ${ic('memo')} 메모로 쓰면 그 구절에 걸리고, 구절 끝에 ${ic('memo')} 메모 아이콘이 붙습니다. 쓰기 화면은 제목부터 도구 두 줄까지가 고정되어 있습니다. 윗줄은 대제목 · 소제목 · 정렬 · 들여쓰기 · 목록 · 인용 · 구분선, 아랫줄은 굵게 · 밑줄 · 형광펜 · 글꼴 · 서식 삭제 · 그림 삽입 · 실행 취소 · 재실행입니다. 인용은 커서가 있는 문단을 인용 칸으로 만들고, 한 번 더 누르면 풀립니다. 제목 칸 오른쪽 ${ic('eye')} 미리보기를 누르면 완성된 모습이 보입니다. 접을 부분을 드래그해 고르고 위의 “접기”를 누르면 고른 부분의 첫 줄이 제목이 되고 나머지가 그 아래에 접힙니다. “접기 해제”는 고른 곳의 접기를 풀어 원래 글로 돌려놓습니다. 저장은 오른쪽 위 ${ic('check')}입니다. 불러온 묵상&연구 메모도 ${ic('pen')} 수정으로 고칠 수 있고, 고친 내용은 이 휴대폰에 따로 보관됩니다. 저장된 메모에서 글을 끌어 고르면 서식 메뉴가 뜨고, 고른 글에 부분 메모도 붙일 수 있습니다. 메모에 표나 그림을 넣은 경우, 표는 카드로 접어 볼 수 있고 그림은 누르면 크게 보이며 두 손가락으로 확대할 수 있습니다. 크게 본 사진은 오른쪽 위 “공유”와 “다운로드”로 보내거나 휴대폰에 저장할 수 있습니다. 표나 글을 사진으로만 담았던 묵상&연구 메모는 글로 옮겨 항목마다 접어 두었고(폰 한 화면이 넘는 경우), “원본 보기”를 누르면 원래 사진을 그대로 볼 수 있습니다. AI 답에 “요약”과 “상세”가 있으면 무엇을 넣을지 묻고 자동으로 접어 둡니다. 안이 빈 접기는 저장할 때 지워집니다. 저장된 메모의 ${ic('pen')} 수정 · ${ic('x')} 삭제로 고치거나 지웁니다. 메모 머리의 ${ic('flag')} 대표 구절, ${ic('link')} 관련 구절을 누르면 그 본문으로 가고 “메모로 돌아가기 ›”로 돌아옵니다.`, `<div class="hrow"><span>${ic('flag')}<b>대표 구절 · 요 3:16</b></span></div><div class="hrow"><span>${ic('link')}관련 구절</span><span class="pastef">롬 5:8</span><span class="pastef">요일 4:10</span></div>`)}
+    ${sec('메모', `아래 메뉴 “메모”에서 분류별로 보고 “새 메모”로 씁니다. 구절 메뉴의 ${ic('memo')} 메모로 쓰면 그 구절에 걸리고, 구절 끝에 ${ic('memo')} 메모 아이콘이 붙습니다. 쓰기 화면은 제목부터 도구 두 줄까지가 고정되어 있습니다. 윗줄은 대제목 · 소제목 · 정렬 · 들여쓰기 · 목록 · 인용 · 구분선, 아랫줄은 굵게 · 밑줄 · 형광펜 · 글꼴 · 서식 삭제 · 그림 삽입 · 실행 취소 · 재실행입니다. 인용은 커서가 있는 문단을 인용 칸으로 만들고, 한 번 더 누르면 풀립니다. 제목 칸 오른쪽 ${ic('eye')} 미리보기를 누르면 완성된 모습이 보입니다. 접을 부분을 드래그해 고르고 위의 “접기”를 누르면 고른 부분의 첫 줄이 제목이 되고 나머지가 그 아래에 접힙니다. “접기 해제”는 고른 곳의 접기를 풀어 원래 글로 돌려놓습니다. 저장은 오른쪽 위 ${ic('check')}입니다. 불러온 묵상&연구 메모도 ${ic('pen')} 수정으로 고칠 수 있고, 고친 내용은 이 휴대폰에 따로 보관됩니다. 저장된 메모에서 글을 끌어 고르면 서식 메뉴가 뜨고, 고른 글에 부분 메모도 붙일 수 있습니다. 메모에 표나 그림을 넣은 경우, 표는 카드로 접어 볼 수 있고 그림은 누르면 크게 보이며 두 손가락으로 확대할 수 있습니다. 크게 본 사진은 오른쪽 위 “공유”와 “다운로드”로 보내거나 휴대폰에 저장할 수 있습니다. 표나 글을 사진으로만 담았던 묵상&연구 메모는 글로 옮겨 항목마다 접어 두었고(폰 한 화면이 넘는 경우), “원본 보기”를 누르면 원래 사진을 그대로 볼 수 있습니다. AI 답에 “요약”과 “상세”가 있으면 무엇을 넣을지 묻고 자동으로 접어 둡니다. 저장된 메모의 접기는 상자를 누르면 그 상자 안에 내용이 펼쳐지고, 오른쪽 ⌄ ⌃ 아이콘으로 펼침·접힘이 보입니다. 접기가 여럿인 메모는 본문 위 오른쪽 아이콘으로 모두 펼치거나 모두 접습니다. 메모를 읽다 화면 가운데를 누르면 아래 메뉴의 “읽는 방식”에서 스크롤과 쪽 넘기기를 고를 수 있고(본문 읽기와 따로 기억합니다), 쪽 넘기기에서는 양 끝을 누르거나 밀어 넘깁니다. 쓰기 화면의 “분류” 줄을 누르면 분류를 고릅니다. 안이 빈 접기는 저장할 때 지워집니다. 저장된 메모의 ${ic('pen')} 수정 · ${ic('x')} 삭제로 고치거나 지웁니다. 메모 머리의 ${ic('flag')} 대표 구절, ${ic('link')} 관련 구절을 누르면 그 본문으로 가고 “메모로 돌아가기 ›”로 돌아옵니다.`, `<div class="hrow"><span>${ic('flag')}<b>대표 구절 · 요 3:16</b></span></div><div class="hrow"><span>${ic('link')}관련 구절</span><span class="pastef">롬 5:8</span><span class="pastef">요일 4:10</span></div>`)}
     ${sec('되새김 · 찾기', `${ic('bmk')} 되새김에는 형광펜 · 밑줄 · 진하게로 표시한 말씀이 모두 모입니다. 아래 메뉴의 정렬에서 성경 순서 · 책 순서 · 최신 순을 고르고, 오른쪽 위에서 권을 고릅니다. 오른쪽 위 ${ic('search')} 찾기에서 구절(예: 요 3:16)이나 낱말을 찾고, 범위를 전체 · 본문 · 메모 중에서 고릅니다. 결과는 본문과 메모로 나뉘어 보입니다.`, '<div class="hrow"><span class="pastef on">전체</span><span class="pastef">본문</span><span class="pastef">메모</span></div>')}
     ${ai ? tier('③ AI 활용') + sec('AI 활용 아이콘 세 가지', `구절을 고른 뒤 ${ic('ask')} AI와 간단 Q&A, ${ic('gem')} AI로 번역 비교를 누릅니다. 구절 표시 옆 ${ic('cmp')} 나침반은 AI로 배경·문맥 살피기입니다. 누르면 잠시 “붙여넣으세요” 안내가 뜬 뒤 연결한 AI 창이 열립니다. 구절과 요청은 이미 복사되어 있으니, Claude·Gemini는 입력칸을 길게 눌러 붙여넣기 한 뒤 보내면 됩니다. ChatGPT는 입력칸에 채워진 채 열리니 보내기만 누르면 됩니다. 본문 아래 펼친 개역한글 줄도 길게 눌러 고르면 AI에게 물을 수 있습니다. 최종 판단은 스스로 내리며 묵상하세요.`, FIG.ai()) + sec('AI 지침', '사용법 및 설정 › AI 활용에서 세 지침을 “AI에 저장”해 두어야 AI가 짧은 요청만으로 지침대로 답합니다. 지침은 “전문 보기”로 읽고 “수정”으로 바꿀 수 있습니다. 저장한 지침은 단추가 “✓ 저장 완료”로 바뀌고, 다시 누르면 새로 저장합니다. 붙여 넣을 때 AI가 “외부 지시문일 수 있다”는 안내를 띄울 수 있는데, 이 앱의 성경 읽기 지침이니 읽어 보고 보내시면 됩니다. 연결할 AI를 바꾸면 새 AI에 지침을 다시 저장해 주세요.') : ''}
     ${tier('더 알아두기')}

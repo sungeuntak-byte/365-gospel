@@ -1112,3 +1112,25 @@ label.chk input[type=checkbox],.in-chk input[type=checkbox]{margin-top:calc((1.5
 .deep.open .dh .dt{display:none}
 .deep .dbody .phrow{margin:2px 0 4px}
 .deep .dbody h2.ph{font-family:var(--serif);font-size:calc(var(--fs) - 1px);color:#5a3f28}
+
+/* ===== 9차-17: 메모 글자 조화 · 원본 사진 공유/다운로드 ===== */
+.ivt{position:absolute;top:calc(10px + var(--safe-t));right:10px;z-index:2;display:flex;gap:8px}
+.ivt button{display:flex;align-items:center;gap:5px;height:38px;padding:0 13px;border-radius:19px;background:rgba(255,255,255,.14);color:#fff;font-family:var(--sans);font-size:13.5px}
+.ivt svg.i{width:17px;height:17px}
+.memo h1{font-size:calc(var(--fs) + 3px);line-height:1.45;word-break:keep-all;margin:6px 0 8px}
+.memo .row.between .lab{font-family:var(--sans);font-size:12.5px;color:var(--muted)}
+.memo .mbody h1,.memo .mbody h2,.memo .mbody h3:not(.fold),.memo .mbody h4{font-family:var(--sans);color:var(--v1);line-height:1.5;text-align:left;word-break:keep-all;text-indent:0}
+.memo .mbody h1{font-size:1.06em;margin:1.4em 0 .5em}
+.memo .mbody h2{font-size:1em;margin:1.2em 0 .45em}
+.memo .mbody h3:not(.fold),.memo .mbody h4{font-size:.95em;margin:1em 0 .4em}
+.memo .mbody h3.fold{font-family:var(--sans);font-size:.92em;line-height:1.5;word-break:keep-all;text-align:left}
+.memo .mbody .fbody{padding:.5em .15em .3em}
+.memo .mbody p.vq{text-indent:0;font-size:.95em;line-height:1.8;background:#faf7f1;border-left:3px solid #e3d6c3;border-radius:0 8px 8px 0;padding:6px 10px;margin:.3em 0 .6em}
+.memo .mbody p.pray{text-indent:0;font-size:.95em;background:#f6f1e7;border-radius:8px;padding:7px 11px;margin:.2em 0 .6em}
+.memo .mbody p.msub{text-indent:0;font-family:var(--sans);font-size:.88em;color:var(--v1);margin:.9em 0 .3em;text-align:left}
+.memo .mbody p.mlabel{margin:.6em 0 .15em}
+.memo .mbody p.memo-sub{text-align:left;margin-bottom:.8em}
+.memo .mbody p.figcap{text-indent:0;text-align:center;font-family:var(--sans);font-size:.78em;color:var(--muted);line-height:1.6;margin:-.2em 0 1em}
+.memo .mbody blockquote{font-size:.95em}
+.memo .mbody li{line-height:1.75}
+.memo .mbody ul li{text-align:justify;word-break:break-all}
